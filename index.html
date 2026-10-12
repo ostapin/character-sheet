@@ -15,55 +15,44 @@
     <button id="exportBtn" class="btn">⬇ Экспорт</button>
     <button id="importBtn" class="btn">⬆ Импорт</button>
     <input type="file" id="importFile" accept=".json" hidden>
+    <button id="combatBtn" class="btn btn-combat">⚔ Бой</button>
     <button id="resetBtn" class="btn btn-danger">✖ Сброс</button>
   </div>
 </header>
 
 <main class="grid">
 
-  <!-- ШАПКА ПЕРСОНАЖА -->
+  <!-- ПЕРСОНАЖ -->
   <section class="card card-wide">
     <h2>Персонаж</h2>
     <div class="row">
-      <div class="field">
-        <label>Имя</label>
-        <input type="text" data-key="name" placeholder="Хань Фу">
-      </div>
-      <div class="field">
-        <label>Раса</label>
-        <input type="text" data-key="race" placeholder="Шанец">
-      </div>
-      <div class="field">
-        <label>Размер</label>
-        <input type="text" data-key="size" placeholder="Средний">
-      </div>
-      <div class="field">
-        <label>Класс</label>
-        <input type="text" data-key="class" placeholder="Жрец">
-      </div>
-      <div class="field">
-        <label>Мультикласс</label>
-        <input type="text" data-key="multiclass" placeholder="Второй класс">
-      </div>
+      <div class="field"><label>Имя</label><input type="text" data-key="name" placeholder="Хань Фу"></div>
+      <div class="field"><label>Раса</label><input type="text" data-key="race" placeholder="Шанец"></div>
+      <div class="field"><label>Размер</label><input type="text" data-key="size" placeholder="Средний"></div>
+      <div class="field"><label>Класс</label><input type="text" data-key="class" placeholder="Жрец"></div>
+      <div class="field"><label>Мультикласс</label><input type="text" data-key="multiclass" placeholder="Второй класс"></div>
     </div>
   </section>
 
-  <!-- ХАРАКТЕРИСТИКИ + ПОДКЛАССЫ (в один ряд) -->
+  <!-- ХАРАКТЕРИСТИКИ -->
   <section class="card-half">
     <div class="card">
       <h2>Общие характеристики</h2>
       <div class="stat-grid-2">
         <div class="stat">
-          <label>Здоровье</label>
+          <label>Здоровье (база)</label>
           <input type="number" data-key="hp" placeholder="30">
+          <div class="stat-total">Итог: <b data-total="hp">30</b></div>
         </div>
         <div class="stat">
-          <label>Защита</label>
-          <input type="text" data-key="defense" placeholder="9+1+2">
+          <label>Защита (база)</label>
+          <input type="text" data-key="defense" placeholder="9">
+          <div class="stat-total">Итог: <b data-total="defense">9</b></div>
         </div>
         <div class="stat">
-          <label>Скорость</label>
+          <label>Скорость (база)</label>
           <input type="number" data-key="speed" placeholder="6">
+          <div class="stat-total">Итог: <b data-total="speed">6</b></div>
         </div>
         <div class="stat">
           <label>Вера</label>
@@ -73,6 +62,7 @@
     </div>
   </section>
 
+  <!-- ПОДКЛАССЫ -->
   <section class="card-half">
     <div class="card">
       <h2>Подклассы</h2>
@@ -81,28 +71,22 @@
     </div>
   </section>
 
-  <!-- РАЗУМ / ТЕЛО / ГАРМОНИЯ -->
+  <!-- НАВЫКИ -->
   <section class="card card-wide">
     <h2>Характеристики навыков</h2>
     <div class="skill-columns">
-      <div class="skill-col">
-        <h3>Разум</h3>
-        <div class="skill-list" data-group="mind"></div>
-      </div>
-      <div class="skill-col">
-        <h3>Тело</h3>
-        <div class="skill-list" data-group="body"></div>
-      </div>
-      <div class="skill-col">
-        <h3>Гармония</h3>
-        <div class="skill-list" data-group="harmony"></div>
-      </div>
+      <div class="skill-col"><h3>Разум</h3><div class="skill-list" data-group="mind"></div></div>
+      <div class="skill-col"><h3>Тело</h3><div class="skill-list" data-group="body"></div></div>
+      <div class="skill-col"><h3>Гармония</h3><div class="skill-list" data-group="harmony"></div></div>
     </div>
   </section>
 
-  <!-- ЯЧЕЙКИ ЗАКЛИНАНИЙ — ПРЯМО НА ГЛАВНОЙ -->
+  <!-- ЯЧЕЙКИ ЗАКЛИНАНИЙ -->
   <section class="card card-wide">
-    <h2>Ячейки заклинаний</h2>
+    <div class="section-header">
+      <h2>Ячейки заклинаний</h2>
+      <button class="btn-toggle" data-target="slotsContainer">▾ Скрыть</button>
+    </div>
     <div id="slotsContainer"></div>
   </section>
 
@@ -148,17 +132,21 @@
 
   <!-- ИНВЕНТАРЬ -->
   <section class="card card-wide">
-    <h2>Инвентарь</h2>
+    <div class="section-header">
+      <h2>Инвентарь</h2>
+      <button class="btn-toggle" data-target="bagContainer">▾ Скрыть</button>
+    </div>
     <div id="bagContainer"></div>
     <button class="btn btn-add" id="addBagBtn">+ Создать сумку</button>
-    <div class="total-weight">
-      Общий вес: <span id="totalWeight">0</span>
-    </div>
+    <div class="total-weight">Общий вес: <span id="totalWeight">0</span></div>
   </section>
 
   <!-- СНАРЯЖЕНИЕ -->
   <section class="card card-wide">
-    <h2>Снаряжение</h2>
+    <div class="section-header">
+      <h2>Снаряжение (надето)</h2>
+      <button class="btn-toggle" data-target="equipList">▾ Скрыть</button>
+    </div>
     <div id="equipList"></div>
     <button class="btn btn-add" id="addEquipBtn">+ Добавить снаряжение</button>
     <div class="field" style="margin-top:14px">
@@ -171,26 +159,33 @@
   <section class="card">
     <h2>Кошель</h2>
     <div class="stat-grid">
-      <div class="stat">
-        <label>Золото</label>
-        <input type="number" data-key="gold" placeholder="14">
-      </div>
-      <div class="stat">
-        <label>Серебро</label>
-        <input type="number" data-key="silver" placeholder="10">
-      </div>
-      <div class="stat">
-        <label>Токены</label>
-        <input type="number" data-key="tokens" placeholder="0">
-      </div>
+      <div class="stat"><label>Золото</label><input type="number" data-key="gold" placeholder="14"></div>
+      <div class="stat"><label>Серебро</label><input type="number" data-key="silver" placeholder="10"></div>
+      <div class="stat"><label>Токены</label><input type="number" data-key="tokens" placeholder="0"></div>
     </div>
+  </section>
+
+  <!-- ПОРОГИ ВЕРЫ -->
+  <section class="card">
+    <h2>Пороги веры (некро)</h2>
+    <div id="faithThresholds"></div>
+    <button class="btn btn-add" id="addFaithBtn">+ Добавить порог</button>
   </section>
 
 </main>
 
-<footer class="footer">
-  <span>Лист персонажа · Абсолютный Мир</span>
-</footer>
+<footer class="footer"><span>Лист персонажа · Абсолютный Мир</span></footer>
+
+<!-- МОДАЛКА БОЯ -->
+<div class="modal" id="combatModal">
+  <div class="modal-content modal-wide">
+    <div class="modal-header">
+      <h2>⚔ Боевой режим</h2>
+      <button class="modal-close" id="closeCombatBtn">✖</button>
+    </div>
+    <div class="modal-body" id="combatBody"></div>
+  </div>
+</div>
 
 <div id="toast" class="toast"></div>
 
