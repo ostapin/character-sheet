@@ -22,15 +22,27 @@
 
 <main class="grid">
 
-  <!-- ПЕРСОНАЖ -->
-  <section class="card card-wide">
-    <h2>Персонаж</h2>
-    <div class="row">
-      <div class="field"><label>Имя</label><input type="text" data-key="name" placeholder="Хань Фу"></div>
-      <div class="field"><label>Раса</label><input type="text" data-key="race" placeholder="Шанец"></div>
-      <div class="field"><label>Размер</label><input type="text" data-key="size" placeholder="Средний"></div>
-      <div class="field"><label>Класс</label><input type="text" data-key="class" placeholder="Жрец"></div>
-      <div class="field"><label>Мультикласс</label><input type="text" data-key="multiclass" placeholder="Второй класс"></div>
+  <!-- ПЕРСОНАЖ: фото слева, поля справа -->
+  <section class="card card-wide character-panel">
+    <div class="character-photo">
+      <div class="photo-box" id="photoBox">
+        <img id="photoImg" style="display:none">
+        <span class="photo-ph">Кликни, чтобы<br>загрузить фото<br>персонажа</span>
+      </div>
+    </div>
+    <div class="character-fields">
+      <h2>Персонаж</h2>
+      <div class="row">
+        <div class="field"><label>Имя</label><input type="text" data-key="name" placeholder="Хань Фу"></div>
+        <div class="field"><label>Раса</label><input type="text" data-key="race" placeholder="Шанец"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Размер</label><input type="text" data-key="size" placeholder="Средний"></div>
+        <div class="field"><label>Класс</label><input type="text" data-key="class" placeholder="Жрец"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Мультикласс</label><input type="text" data-key="multiclass" placeholder="Второй класс"></div>
+      </div>
     </div>
   </section>
 
@@ -42,17 +54,17 @@
         <div class="stat">
           <label>Здоровье (база)</label>
           <input type="number" data-key="hp" placeholder="30">
-          <div class="stat-total">Итог: <b data-total="hp">30</b></div>
+          <div class="stat-total" data-total-btn="hp">Итог: <b data-total="hp">30</b></div>
         </div>
         <div class="stat">
           <label>Защита (база)</label>
           <input type="text" data-key="defense" placeholder="9">
-          <div class="stat-total">Итог: <b data-total="defense">9</b></div>
+          <div class="stat-total" data-total-btn="defense">Итог: <b data-total="defense">9</b></div>
         </div>
         <div class="stat">
           <label>Скорость (база)</label>
           <input type="number" data-key="speed" placeholder="6">
-          <div class="stat-total">Итог: <b data-total="speed">6</b></div>
+          <div class="stat-total" data-total-btn="speed">Итог: <b data-total="speed">6</b></div>
         </div>
         <div class="stat">
           <label>Вера</label>
@@ -66,7 +78,7 @@
   <section class="card-half">
     <div class="card">
       <h2>Подклассы</h2>
-      <div id="subclassList"></div>
+      <div class="scroll-box" id="subclassList"></div>
       <button class="btn btn-add" id="addSubclassBtn">+ Добавить подкласс</button>
     </div>
   </section>
@@ -81,7 +93,7 @@
     </div>
   </section>
 
-  <!-- ЯЧЕЙКИ ЗАКЛИНАНИЙ -->
+  <!-- ЯЧЕЙКИ -->
   <section class="card card-wide">
     <div class="section-header">
       <h2>Ячейки заклинаний</h2>
@@ -176,7 +188,7 @@
 
 <footer class="footer"><span>Лист персонажа · Абсолютный Мир</span></footer>
 
-<!-- МОДАЛКА БОЯ -->
+<!-- МОДАЛКА: БОЙ -->
 <div class="modal" id="combatModal">
   <div class="modal-content modal-wide">
     <div class="modal-header">
@@ -184,6 +196,17 @@
       <button class="modal-close" id="closeCombatBtn">✖</button>
     </div>
     <div class="modal-body" id="combatBody"></div>
+  </div>
+</div>
+
+<!-- МОДАЛКА: РАСШИФРОВКА ИТОГА -->
+<div class="modal" id="breakdownModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 id="breakdownTitle">Расшифровка</h2>
+      <button class="modal-close" id="closeBreakdownBtn">✖</button>
+    </div>
+    <div class="modal-body" id="breakdownBody"></div>
   </div>
 </div>
 
