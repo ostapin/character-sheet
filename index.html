@@ -21,7 +21,7 @@
 
 <main class="grid">
 
-  <!-- ===== ШАПКА ПЕРСОНАЖА ===== -->
+  <!-- ШАПКА ПЕРСОНАЖА -->
   <section class="card card-wide">
     <h2>Персонаж</h2>
     <div class="row">
@@ -37,8 +37,6 @@
         <label>Размер</label>
         <input type="text" data-key="size" placeholder="Средний">
       </div>
-    </div>
-    <div class="row">
       <div class="field">
         <label>Класс</label>
         <input type="text" data-key="class" placeholder="Жрец">
@@ -50,37 +48,40 @@
     </div>
   </section>
 
-  <!-- ===== ОСНОВНЫЕ ХАРАКТЕРИСТИКИ ===== -->
-  <section class="card">
-    <h2>Общие характеристики</h2>
-    <div class="stat-grid">
-      <div class="stat">
-        <label>Здоровье</label>
-        <input type="number" data-key="hp" placeholder="30">
-      </div>
-      <div class="stat">
-        <label>Защита</label>
-        <input type="text" data-key="defense" placeholder="9+1+2">
-      </div>
-      <div class="stat">
-        <label>Скорость</label>
-        <input type="number" data-key="speed" placeholder="6">
-      </div>
-      <div class="stat">
-        <label>Вера</label>
-        <input type="number" data-key="faith" placeholder="-70">
+  <!-- ХАРАКТЕРИСТИКИ + ПОДКЛАССЫ (в один ряд) -->
+  <section class="card-half">
+    <div class="card">
+      <h2>Общие характеристики</h2>
+      <div class="stat-grid-2">
+        <div class="stat">
+          <label>Здоровье</label>
+          <input type="number" data-key="hp" placeholder="30">
+        </div>
+        <div class="stat">
+          <label>Защита</label>
+          <input type="text" data-key="defense" placeholder="9+1+2">
+        </div>
+        <div class="stat">
+          <label>Скорость</label>
+          <input type="number" data-key="speed" placeholder="6">
+        </div>
+        <div class="stat">
+          <label>Вера</label>
+          <input type="number" data-key="faith" placeholder="-70">
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- ===== ПОДКЛАССЫ ===== -->
-  <section class="card">
-    <h2>Подклассы</h2>
-    <div id="subclassList"></div>
-    <button class="btn btn-add" id="addSubclassBtn">+ Добавить подкласс</button>
+  <section class="card-half">
+    <div class="card">
+      <h2>Подклассы</h2>
+      <div id="subclassList"></div>
+      <button class="btn btn-add" id="addSubclassBtn">+ Добавить подкласс</button>
+    </div>
   </section>
 
-  <!-- ===== РАЗУМ / ТЕЛО / ГАРМОНИЯ (в один ряд) ===== -->
+  <!-- РАЗУМ / ТЕЛО / ГАРМОНИЯ -->
   <section class="card card-wide">
     <h2>Характеристики навыков</h2>
     <div class="skill-columns">
@@ -99,65 +100,74 @@
     </div>
   </section>
 
-  <!-- ===== ЯЧЕЙКИ ЗАКЛИНАНИЙ (кнопка → модальное окно) ===== -->
-  <section class="card">
+  <!-- ЯЧЕЙКИ ЗАКЛИНАНИЙ — ПРЯМО НА ГЛАВНОЙ -->
+  <section class="card card-wide">
     <h2>Ячейки заклинаний</h2>
-    <p class="hint">1 круг: 8 · 2 круг: 7 · 3 круг: 6 · 4 круг: 5 · 5 круг: 4</p>
-    <button class="btn btn-green btn-big" id="openSlotsBtn">🔮 Открыть ячейки</button>
+    <div id="slotsContainer"></div>
   </section>
 
-  <!-- ===== ЗАКЛИНАНИЯ ===== -->
+  <!-- ЗАКЛИНАНИЯ -->
   <section class="card card-wide">
-    <h2>Заклинания</h2>
+    <div class="section-header">
+      <h2>Заклинания</h2>
+      <button class="btn-toggle" data-target="spellContainer">▾ Скрыть</button>
+    </div>
     <div id="spellContainer"></div>
     <button class="btn btn-add" id="addSpellBtn">+ Добавить заклинание</button>
   </section>
 
-  <!-- ===== ЭФФЕКТЫ И НАВЫКИ ===== -->
+  <!-- ЭФФЕКТЫ -->
   <section class="card card-wide">
-    <h2>Эффекты и навыки</h2>
+    <div class="section-header">
+      <h2>Эффекты и навыки</h2>
+      <button class="btn-toggle" data-target="effectList">▾ Скрыть</button>
+    </div>
     <div id="effectList"></div>
     <button class="btn btn-add" id="addEffectBtn">+ Добавить эффект</button>
   </section>
 
-  <!-- ===== АКТИВНЫЕ НАВЫКИ ===== -->
+  <!-- АКТИВНЫЕ -->
   <section class="card card-wide">
-    <h2>Активные навыки</h2>
+    <div class="section-header">
+      <h2>Активные навыки</h2>
+      <button class="btn-toggle" data-target="activeList">▾ Скрыть</button>
+    </div>
     <div id="activeList"></div>
     <button class="btn btn-add" id="addActiveBtn">+ Добавить активный навык</button>
   </section>
 
-  <!-- ===== ПАССИВНЫЕ НАВЫКИ ===== -->
+  <!-- ПАССИВНЫЕ -->
   <section class="card card-wide">
-    <h2>Пассивные навыки</h2>
+    <div class="section-header">
+      <h2>Пассивные навыки</h2>
+      <button class="btn-toggle" data-target="passiveList">▾ Скрыть</button>
+    </div>
     <div id="passiveList"></div>
     <button class="btn btn-add" id="addPassiveBtn">+ Добавить пассивный навык</button>
   </section>
 
-  <!-- ===== ИНВЕНТАРЬ (сумки) ===== -->
+  <!-- ИНВЕНТАРЬ -->
   <section class="card card-wide">
     <h2>Инвентарь</h2>
     <div id="bagContainer"></div>
     <button class="btn btn-add" id="addBagBtn">+ Создать сумку</button>
-
     <div class="total-weight">
       Общий вес: <span id="totalWeight">0</span>
     </div>
   </section>
 
-  <!-- ===== СНАРЯЖЕНИЕ ===== -->
+  <!-- СНАРЯЖЕНИЕ -->
   <section class="card card-wide">
     <h2>Снаряжение</h2>
     <div id="equipList"></div>
     <button class="btn btn-add" id="addEquipBtn">+ Добавить снаряжение</button>
-
     <div class="field" style="margin-top:14px">
       <label>Свободные очки</label>
       <input type="number" data-key="freePoints" placeholder="0">
     </div>
   </section>
 
-  <!-- ===== КОШЕЛЬ ===== -->
+  <!-- КОШЕЛЬ -->
   <section class="card">
     <h2>Кошель</h2>
     <div class="stat-grid">
@@ -181,17 +191,6 @@
 <footer class="footer">
   <span>Лист персонажа · Абсолютный Мир</span>
 </footer>
-
-<!-- ===== МОДАЛЬНОЕ ОКНО ЯЧЕЕК ===== -->
-<div class="modal" id="slotsModal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h2>🔮 Ячейки заклинаний</h2>
-      <button class="modal-close" id="closeSlotsBtn">✖</button>
-    </div>
-    <div class="modal-body" id="slotsBody"></div>
-  </div>
-</div>
 
 <div id="toast" class="toast"></div>
 
