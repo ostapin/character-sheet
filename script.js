@@ -1,5 +1,5 @@
 /* ============================================================
-   ЛИСТ ПЕРСОНАЖА — полная логика
+   ЛИСТ ПЕРСОНАЖА — полная логика (исправлено)
    ============================================================ */
 
 const STORAGE_KEY = 'absolute_world_character';
@@ -40,6 +40,7 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
 function toast(msg) {
   const t = $('#toast');
+  if (!t) return;
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(t._timer);
@@ -74,10 +75,11 @@ function renderSkills() {
 }
 
 /* ============================================================
-   УНИВЕРСАЛЬНЫЙ СПИСОК (подклассы, эффекты, навыки, снаряжение)
+   УНИВЕРСАЛЬНЫЙ СПИСОК
    ============================================================ */
 function createListItem(opts) {
-  const { container, title = '', desc = '', extra = '', sub = '' } = opts;
+  const { container, title = '', desc = '', extra = '' } = opts;
+  if (!container) return null;
   const el = document.createElement('div');
   el.className = 'list-item';
   el.dataset.uid = nextId();
@@ -85,7 +87,6 @@ function createListItem(opts) {
     <div class="list-head">
       <div>
         <span class="list-title">${title || 'Без названия'}</span>
-        <span class="list-sub">${sub || ''}</span>
       </div>
       <button class="list-del" title="Удалить">✖</button>
     </div>
@@ -98,13 +99,12 @@ function createListItem(opts) {
         <label>Описание</label>
         <textarea class="item-desc" placeholder="Описание...">${desc}</textarea>
       </div>
-      ${extra ? `<div class="field"><label>Доп. инфо</label><input type="text" class="item-extra" value="${extra}"></div>` : ''}
+      ${extra !== '' ? `<div class="field"><label>Доп. инфо</label><input type="text" class="item-extra" value="${extra}"></div>` : ''}
     </div>
   `;
   const head = el.querySelector('.list-head');
   const titleSpan = el.querySelector('.list-title');
   const titleInput = el.querySelector('.item-title');
-  const subSpan = el.querySelector('.list-sub');
 
   head.addEventListener('click', e => {
     if (e.target.closest('.list-del')) return;
@@ -129,7 +129,9 @@ function createListItem(opts) {
 }
 
 function collectList(containerId) {
-  return $$(`#${containerId} .list-item`).map(el => ({
+  const c = $('#' + containerId);
+  if (!c) return [];
+  return $$('.list-item', c).map(el => ({
     title: el.querySelector('.item-title')?.value || '',
     desc:  el.querySelector('.item-desc')?.value || '',
     extra: el.querySelector('.item-extra')?.value || ''
@@ -137,14 +139,15 @@ function collectList(containerId) {
 }
 
 function restoreList(containerId, items) {
-  const c = $(`#${containerId}`);
+  const c = $('#' + containerId);
+  if (!c) return;
   c.innerHTML = '';
   (items || []).forEach(it => {
     createListItem({
       container: c,
       title: it.title || '',
       desc:  it.desc || '',
-      extra: it.extra || ''
+      extra: it.extra !== undefined ? it.extra : ''
     });
   });
 }
@@ -194,27 +197,10 @@ function createSpell(data = {}) {
     const f = e.target.files[0];
     if (!f) return;
     const url = await fileToDataURL(f);
-    imgBox.innerHTML = `
-      <img src="${url}" alt="">
-      <input type="file" accept="image/*" class="spell-img-input">
-    `;
+    imgBox.innerHTML = `<img src="${url}" alt="">`;
     imgBox.classList.add('has-image');
-    bindImgInput();
     autoSave();
   });
-
-  function bindImgInput() {
-    const ni = imgBox.querySelector('.spell-img-input');
-    ni.addEventListener('click', e => e.stopPropagation());
-    ni.addEventListener('change', async ev => {
-      const f = ev.target.files[0];
-      if (!f) return;
-      const url = await fileToDataURL(f);
-      imgBox.querySelector('img').src = url;
-      autoSave();
-    });
-  }
-  bindImgInput();
 
   el.querySelector('.list-del').addEventListener('click', () => {
     el.remove();
@@ -229,7 +215,9 @@ function createSpell(data = {}) {
 }
 
 function collectSpells() {
-  return $$('#spellContainer .spell').map(el => {
+  const c = $('#spellContainer');
+  if (!c) return [];
+  return $$('.spell', c).map(el => {
     const img = el.querySelector('.spell-img-box img');
     return {
       circle: el.querySelector('.spell-circle').value,
@@ -242,17 +230,19 @@ function collectSpells() {
 
 function restoreSpells(list) {
   const c = $('#spellContainer');
+  if (!c) return;
   c.innerHTML = '';
   (list || []).forEach(sp => c.appendChild(createSpell(sp)));
 }
 
 /* ============================================================
-   ЯЧЕЙКИ ЗАКЛИНАНИЙ (модальное окно)
+   ЯЧЕЙКИ ЗАКЛИНАНИЙ
    ============================================================ */
-let slotsData = {}; // { "1-0": { image, label }, ... }
+let slotsData = {};
 
 function renderSlots() {
   const body = $('#slotsBody');
+  if (!body) return;
   body.innerHTML = '';
   Object.entries(SLOT_COUNTS).forEach(([circle, count]) => {
     const section = document.createElement('div');
@@ -380,7 +370,9 @@ function addBagItem(container, data = {}) {
 }
 
 function collectBags() {
-  return $$('#bagContainer .bag').map(bag => ({
+  const c = $('#bagContainer');
+  if (!c) return [];
+  return $$('.bag', c).map(bag => ({
     name:  bag.querySelector('.bag-name').value,
     cells: bag.querySelector('.bag-cells').value,
     items: $$('.bag-item', bag).map(row => ({
@@ -395,6 +387,7 @@ function collectBags() {
 
 function restoreBags(list) {
   const c = $('#bagContainer');
+  if (!c) return;
   c.innerHTML = '';
   (list || []).forEach(b => c.appendChild(createBag(b)));
   recalcWeights();
@@ -405,7 +398,6 @@ function recalcWeights() {
   $$('#bagContainer .bag').forEach(bag => {
     if (bag._recalc) total += bag._recalc();
   });
-  // снаряжение — считаем каждое поле «вес» если есть
   $$('#equipList .list-item').forEach(it => {
     const extra = it.querySelector('.item-extra');
     if (extra) {
@@ -413,7 +405,8 @@ function recalcWeights() {
       if (!isNaN(n)) total += n;
     }
   });
-  $('#totalWeight').textContent = total.toFixed(2);
+  const tw = $('#totalWeight');
+  if (tw) tw.textContent = total.toFixed(2);
 }
 
 /* ============================================================
@@ -533,9 +526,9 @@ function resetAll() {
   if (!confirm('Удалить все данные персонажа?')) return;
   localStorage.removeItem(STORAGE_KEY);
   $$('[data-key], [data-skill]').forEach(el => el.value = '');
-  $('#spellContainer').innerHTML = '';
+  const sc = $('#spellContainer'); if (sc) sc.innerHTML = '';
   ['subclassList','effectList','activeList','passiveList','equipList','bagContainer']
-    .forEach(id => $('#' + id).innerHTML = '');
+    .forEach(id => { const el = $('#' + id); if (el) el.innerHTML = ''; });
   slotsData = {};
   renderSlots();
   recalcWeights();
@@ -552,48 +545,49 @@ function init() {
 
   document.addEventListener('input', autoSave);
 
-  // кнопки-шапки
-  $('#saveBtn').onclick   = saveNow;
-  $('#exportBtn').onclick = exportJSON;
-  $('#importBtn').onclick = () => $('#importFile').click();
-  $('#resetBtn').onclick  = resetAll;
-  $('#importFile').onchange = e => {
+  const bind = (id, fn) => { const el = $(id); if (el) el.onclick = fn; };
+
+  bind('#saveBtn',   saveNow);
+  bind('#exportBtn', exportJSON);
+  bind('#importBtn', () => { const f = $('#importFile'); if (f) f.click(); });
+  bind('#resetBtn',  resetAll);
+
+  const imp = $('#importFile');
+  if (imp) imp.onchange = e => {
     if (e.target.files[0]) importJSON(e.target.files[0]);
     e.target.value = '';
   };
 
-  // списки
-  $('#addSubclassBtn').onclick = () => createListItem({ container: $('#subclassList'), title: 'Новый подкласс' });
-  $('#addEffectBtn').onclick   = () => createListItem({ container: $('#effectList'),   title: 'Новый эффект' });
-  $('#addActiveBtn').onclick   = () => createListItem({ container: $('#activeList'),   title: 'Новый активный навык' });
-  $('#addPassiveBtn').onclick  = () => createListItem({ container: $('#passiveList'),  title: 'Новый пассивный навык' });
-  $('#addEquipBtn').onclick    = () => createListItem({ container: $('#equipList'),    title: 'Новое снаряжение', extra: '0' });
+  bind('#addSubclassBtn', () => createListItem({ container: $('#subclassList'), title: 'Новый подкласс' }));
+  bind('#addEffectBtn',   () => createListItem({ container: $('#effectList'),   title: 'Новый эффект' }));
+  bind('#addActiveBtn',   () => createListItem({ container: $('#activeList'),   title: 'Новый активный навык' }));
+  bind('#addPassiveBtn',  () => createListItem({ container: $('#passiveList'),  title: 'Новый пассивный навык' }));
+  bind('#addEquipBtn',    () => createListItem({ container: $('#equipList'),    title: 'Новое снаряжение', extra: '0' }));
 
-  // заклинания
-  $('#addSpellBtn').onclick = () => {
-    $('#spellContainer').appendChild(createSpell());
+  bind('#addSpellBtn', () => {
+    const c = $('#spellContainer');
+    if (c) c.appendChild(createSpell());
     autoSave();
-  };
+  });
 
-  // сумки
-  $('#addBagBtn').onclick = () => {
-    $('#bagContainer').appendChild(createBag({ name: 'Сумка', items: [] }));
+  bind('#addBagBtn', () => {
+    const c = $('#bagContainer');
+    if (c) c.appendChild(createBag({ name: 'Сумка', items: [] }));
     recalcWeights();
     autoSave();
-  };
+  });
 
-  // модальное окно ячеек
-  $('#openSlotsBtn').onclick = () => {
-    renderSlots();
-    $('#slotsModal').classList.add('show');
-  };
-  $('#closeSlotsBtn').onclick = () => $('#slotsModal').classList.remove('show');
-  $('#slotsModal').addEventListener('click', e => {
-    if (e.target.id === 'slotsModal') $('#slotsModal').classList.remove('show');
+  bind('#openSlotsBtn',  () => { renderSlots(); $('#slotsModal')?.classList.add('show'); });
+  bind('#closeSlotsBtn', () => $('#slotsModal')?.classList.remove('show'));
+
+  const modal = $('#slotsModal');
+  if (modal) modal.addEventListener('click', e => {
+    if (e.target.id === 'slotsModal') modal.classList.remove('show');
   });
 
   recalcWeights();
   toast('☠ Лист персонажа загружен');
 }
 
+document.addEventListener('DOMContentLoaded', init);
 document.addEventListener('DOMContentLoaded', init);
