@@ -1,498 +1,433 @@
 /* ============================================================
-   ЛИСТ ПЕРСОНАЖА — полная логика (исправлено)
+   ЛИСТ ПЕРСОНАЖА — логика
    ============================================================ */
 
-const STORAGE_KEY = 'absolute_world_character';
+const STORAGE_KEY = 'absolute_world_character_v2';
+const SLOTS_CONFIG = { 1: 8, 2: 7, 3: 6, 4: 5, 5: 4 };
 
-/* ---- НАВЫКИ ---- */
 const SKILLS = {
   mind: [
-    { key: 'insight',       label: 'Проницательность' },
-    { key: 'erudition',     label: 'Эрудиция' },
-    { key: 'charm',         label: 'Обаяние' },
-    { key: 'cunning',       label: 'Хитрость' },
+    { key: 'insight', label: 'Проницательность' },
+    { key: 'erudition', label: 'Эрудиция' },
+    { key: 'charm', label: 'Обаяние' },
+    { key: 'cunning', label: 'Хитрость' },
     { key: 'concentration', label: 'Концентрация' }
   ],
   body: [
-    { key: 'athletics',  label: 'Атлетика' },
-    { key: 'endurance',  label: 'Стойкость' },
-    { key: 'instincts',  label: 'Инстинкты' },
-    { key: 'reflexes',   label: 'Рефлексы' },
-    { key: 'rage',       label: 'Ярость' }
+    { key: 'athletics', label: 'Атлетика' },
+    { key: 'endurance', label: 'Стойкость' },
+    { key: 'instincts', label: 'Инстинкты' },
+    { key: 'reflexes', label: 'Рефлексы' },
+    { key: 'rage', label: 'Ярость' }
   ],
   harmony: [
     { key: 'acrobatics', label: 'Акробатика' },
-    { key: 'creation',   label: 'Созидание' },
-    { key: 'dexterity',  label: 'Проворство' },
-    { key: 'grace',      label: 'Грация' },
-    { key: 'accuracy',   label: 'Точность' }
+    { key: 'creation', label: 'Созидание' },
+    { key: 'dexterity', label: 'Проворство' },
+    { key: 'grace', label: 'Грация' },
+    { key: 'accuracy', label: 'Точность' }
   ]
 };
 
-/* ---- ЯЧЕЙКИ ПО КРУГАМ ---- */
-const SLOT_COUNTS = { 1: 8, 2: 7, 3: 6, 4: 5, 5: 4 };
-
-/* ============================================================
-   УТИЛИТЫ
-   ============================================================ */
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
 function toast(msg) {
   const t = $('#toast');
-  if (!t) return;
   t.textContent = msg;
   t.classList.add('show');
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => t.classList.remove('show'), 2200);
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 2200);
 }
 
-function fileToDataURL(file) {
-  return new Promise(resolve => {
-    const r = new FileReader();
-    r.onload = e => resolve(e.target.result);
-    r.readAsDataURL(file);
-  });
-}
-
-let uid = 0;
-const nextId = () => `id_${Date.now()}_${uid++}`;
-
-/* ============================================================
-   НАВЫКИ
-   ============================================================ */
+/* ---- НАВЫКИ ---- */
 function renderSkills() {
   Object.entries(SKILLS).forEach(([group, list]) => {
     const box = document.querySelector(`[data-group="${group}"]`);
-    if (!box) return;
     box.innerHTML = list.map(s => `
       <div class="skill-row">
         <label>${s.label}</label>
-        <input type="number" step="1" data-skill="${s.key}" placeholder="0">
+        <input type="number" data-skill="${s.key}" placeholder="0">
       </div>
     `).join('');
   });
 }
 
-/* ============================================================
-   УНИВЕРСАЛЬНЫЙ СПИСОК
-   ============================================================ */
-function createListItem(opts) {
-  const { container, title = '', desc = '', extra = '' } = opts;
-  if (!container) return null;
-  const el = document.createElement('div');
-  el.className = 'list-item';
-  el.dataset.uid = nextId();
-  el.innerHTML = `
-    <div class="list-head">
-      <div>
-        <span class="list-title">${title || 'Без названия'}</span>
-      </div>
-      <button class="list-del" title="Удалить">✖</button>
+/* ---- УНИВЕРСАЛЬНАЯ КАРТОЧКА СПИСКА ---- */
+/* kind: 'spell' | 'effect' | 'active' | 'passive' | 'equip' */
+function createListCard(kind, data = {}) {
+  const div = document.createElement('div');
+  div.className = 'list-card';
+  div.dataset.kind = kind;
+
+  const isSpell = kind === 'spell';
+
+  div.innerHTML = `
+    <div class="card-img-box" title="Кликни, чтобы загрузить карточку">
+      <img style="display:none">
+      <span class="ph">${data.img ? '' : 'Кликни,<br>чтобы загрузить<br>карточку'}</span>
     </div>
-    <div class="list-body">
-      <div class="field">
-        <label>Название</label>
-        <input type="text" class="item-title" value="${title}">
-      </div>
-      <div class="field">
-        <label>Описание</label>
-        <textarea class="item-desc" placeholder="Описание...">${desc}</textarea>
-      </div>
-      ${extra !== '' ? `<div class="field"><label>Доп. инфо</label><input type="text" class="item-extra" value="${extra}"></div>` : ''}
+    <div class="card-fields">
+      ${isSpell ? `
+        <select class="f-circle">
+          <option value="1">1 круг</option>
+          <option value="2">2 круг</option>
+          <option value="3">3 круг</option>
+          <option value="4">4 круг</option>
+          <option value="5">5 круг</option>
+        </select>
+      ` : ''}
+      <input type="text" class="f-name" placeholder="Название">
+      <textarea class="f-desc" placeholder="Описание"></textarea>
     </div>
-  `;
-  const head = el.querySelector('.list-head');
-  const titleSpan = el.querySelector('.list-title');
-  const titleInput = el.querySelector('.item-title');
-
-  head.addEventListener('click', e => {
-    if (e.target.closest('.list-del')) return;
-    el.classList.toggle('open');
-  });
-
-  titleInput.addEventListener('input', () => {
-    titleSpan.textContent = titleInput.value || 'Без названия';
-    autoSave();
-  });
-
-  el.querySelector('.item-desc')?.addEventListener('input', autoSave);
-  el.querySelector('.item-extra')?.addEventListener('input', autoSave);
-
-  el.querySelector('.list-del').addEventListener('click', () => {
-    el.remove();
-    autoSave();
-  });
-
-  container.appendChild(el);
-  return el;
-}
-
-function collectList(containerId) {
-  const c = $('#' + containerId);
-  if (!c) return [];
-  return $$('.list-item', c).map(el => ({
-    title: el.querySelector('.item-title')?.value || '',
-    desc:  el.querySelector('.item-desc')?.value || '',
-    extra: el.querySelector('.item-extra')?.value || ''
-  }));
-}
-
-function restoreList(containerId, items) {
-  const c = $('#' + containerId);
-  if (!c) return;
-  c.innerHTML = '';
-  (items || []).forEach(it => {
-    createListItem({
-      container: c,
-      title: it.title || '',
-      desc:  it.desc || '',
-      extra: it.extra !== undefined ? it.extra : ''
-    });
-  });
-}
-
-/* ============================================================
-   ЗАКЛИНАНИЯ
-   ============================================================ */
-function createSpell(data = {}) {
-  const el = document.createElement('div');
-  el.className = 'spell';
-  el.dataset.uid = nextId();
-  el.innerHTML = `
-    <div class="spell-top">
-      <select class="spell-circle">
-        ${[1,2,3,4,5].map(n => `<option value="${n}">${n} круг</option>`).join('')}
-      </select>
-      <input type="text" class="spell-name" placeholder="Название заклинания">
-      <button class="list-del" title="Удалить">✖</button>
-    </div>
-    <div class="spell-body">
-      <label class="spell-img-box ${data.image ? 'has-image' : ''}">
-        ${data.image
-          ? `<img src="${data.image}" alt="">`
-          : `<span class="placeholder">Кликни<br>чтобы загрузить<br>карточку</span>`}
-        <input type="file" accept="image/*" class="spell-img-input">
-      </label>
-      <div class="spell-info">
-        <div class="field">
-          <label>Описание</label>
-          <textarea class="spell-desc" placeholder="Описание...">${data.desc || ''}</textarea>
-        </div>
-      </div>
-    </div>
+    <button class="list-del" title="Удалить">✖</button>
   `;
 
-  el.querySelector('.spell-circle').value = data.circle || '1';
-  el.querySelector('.spell-name').value = data.name || '';
+  const imgBox = div.querySelector('.card-img-box');
+  const img = imgBox.querySelector('img');
+  const ph = imgBox.querySelector('.ph');
+  const nameInput = div.querySelector('.f-name');
+  const descInput = div.querySelector('.f-desc');
 
-  const imgBox = el.querySelector('.spell-img-box');
-  const imgInput = el.querySelector('.spell-img-input');
+  if (isSpell && data.circle) div.querySelector('.f-circle').value = data.circle;
+  if (data.name) nameInput.value = data.name;
+  if (data.desc) descInput.value = data.desc;
+  if (data.img) {
+    img.src = data.img;
+    img.style.display = 'block';
+    if (ph) ph.style.display = 'none';
+  }
 
-  imgBox.addEventListener('click', e => {
-    if (e.target.tagName !== 'INPUT') imgInput.click();
-  });
+  // загрузка картинки
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'image/*';
+  fileInput.style.display = 'none';
+  div.appendChild(fileInput);
 
-  imgInput.addEventListener('change', async e => {
+  imgBox.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', e => {
     const f = e.target.files[0];
     if (!f) return;
-    const url = await fileToDataURL(f);
-    imgBox.innerHTML = `<img src="${url}" alt="">`;
-    imgBox.classList.add('has-image');
-    autoSave();
-  });
-
-  el.querySelector('.list-del').addEventListener('click', () => {
-    el.remove();
-    autoSave();
-  });
-
-  el.querySelectorAll('textarea, select, .spell-name').forEach(x => {
-    x.addEventListener('input', autoSave);
-  });
-
-  return el;
-}
-
-function collectSpells() {
-  const c = $('#spellContainer');
-  if (!c) return [];
-  return $$('.spell', c).map(el => {
-    const img = el.querySelector('.spell-img-box img');
-    return {
-      circle: el.querySelector('.spell-circle').value,
-      name:   el.querySelector('.spell-name').value,
-      desc:   el.querySelector('.spell-desc').value,
-      image:  img ? img.src : ''
+    const reader = new FileReader();
+    reader.onload = ev => {
+      img.src = ev.target.result;
+      img.style.display = 'block';
+      if (ph) ph.style.display = 'none';
+      autoSave();
     };
+    reader.readAsDataURL(f);
   });
+
+  div.querySelector('.list-del').onclick = () => { div.remove(); autoSave(); };
+  div.querySelectorAll('input, textarea, select').forEach(el => el.addEventListener('input', autoSave));
+
+  return div;
 }
 
-function restoreSpells(list) {
-  const c = $('#spellContainer');
-  if (!c) return;
-  c.innerHTML = '';
-  (list || []).forEach(sp => c.appendChild(createSpell(sp)));
+/* ---- ПОДКЛАССЫ ---- */
+function createSubclass(data = {}) {
+  const div = document.createElement('div');
+  div.className = 'subclass';
+  div.innerHTML = `
+    <div class="subclass-head">
+      <button class="subclass-toggle">▸</button>
+      <input type="text" class="sc-name" placeholder="Название подкласса">
+    </div>
+    <div class="subclass-desc">
+      <textarea class="sc-desc" rows="3" placeholder="Описание"></textarea>
+    </div>
+  `;
+  const toggle = div.querySelector('.subclass-toggle');
+  const head = div.querySelector('.subclass-head');
+  toggle.onclick = e => {
+    e.stopPropagation();
+    div.classList.toggle('open');
+    toggle.textContent = div.classList.contains('open') ? '▾' : '▸';
+  };
+  head.addEventListener('click', e => {
+    if (e.target.tagName === 'INPUT') return;
+    div.classList.toggle('open');
+    toggle.textContent = div.classList.contains('open') ? '▾' : '▸';
+  });
+  if (data.name) div.querySelector('.sc-name').value = data.name;
+  if (data.desc) div.querySelector('.sc-desc').value = data.desc;
+  div.querySelectorAll('input, textarea').forEach(el => el.addEventListener('input', autoSave));
+  return div;
 }
 
-/* ============================================================
-   ЯЧЕЙКИ ЗАКЛИНАНИЙ
-   ============================================================ */
-let slotsData = {};
+/* ---- СУМКИ ---- */
+function createBag(data = {}) {
+  const div = document.createElement('div');
+  div.className = 'bag';
+  div.innerHTML = `
+    <div class="bag-header">
+      <input type="text" class="bag-name" placeholder="Название сумки">
+      <span class="bag-info">Ячеек: <b class="bag-count">0</b> · Вес: <b class="bag-weight">0</b></span>
+      <button class="btn btn-danger bag-del" style="padding:6px 10px">✖</button>
+    </div>
+    <div class="bag-items"></div>
+    <button class="btn btn-add bag-add">+ Добавить предмет</button>
+  `;
+  const itemsBox = div.querySelector('.bag-items');
 
-function renderSlots() {
-  const body = $('#slotsBody');
-  if (!body) return;
-  body.innerHTML = '';
-  Object.entries(SLOT_COUNTS).forEach(([circle, count]) => {
-    const section = document.createElement('div');
-    section.className = 'slot-circle';
-    section.innerHTML = `<h3>${circle} круг — ${count} ячеек</h3>`;
+  function addItem(item = {}) {
     const row = document.createElement('div');
-    row.className = 'slot-row';
-    for (let i = 0; i < count; i++) {
-      const id = `${circle}-${i}`;
-      const data = slotsData[id] || {};
-      const card = document.createElement('div');
-      card.className = 'slot-card' + (data.image ? ' has-image' : '');
-      card.dataset.slot = id;
-      card.innerHTML = `
-        <span class="slot-label">${i + 1}</span>
-        ${data.image
-          ? `<img src="${data.image}" alt="">`
-          : `<span class="slot-empty">Пусто</span>`}
-        ${data.image ? `<button class="slot-clear" title="Очистить">✖</button>` : ''}
-        <input type="file" accept="image/*" hidden>
+    row.className = 'bag-item';
+    row.innerHTML = `
+      <input type="number" class="i-num" placeholder="#" value="${item.num || ''}">
+      <input type="text" class="i-name" placeholder="Предмет" value="${item.name || ''}">
+      <input type="text" class="i-desc" placeholder="Описание" value="${item.desc || ''}">
+      <input type="number" class="i-qty" placeholder="Кол-во" value="${item.qty || ''}">
+      <input type="number" step="0.1" class="i-weight" placeholder="Вес" value="${item.weight || ''}">
+      <button class="item-del">✖</button>
+    `;
+    row.querySelector('.item-del').onclick = () => { row.remove(); updateBagStats(); autoSave(); };
+    row.querySelectorAll('input').forEach(el => el.addEventListener('input', () => {
+      updateBagStats();
+      autoSave();
+    }));
+    itemsBox.appendChild(row);
+  }
+
+  function updateBagStats() {
+    const rows = itemsBox.querySelectorAll('.bag-item');
+    let totalWeight = 0;
+    rows.forEach(r => {
+      const w = parseFloat(r.querySelector('.i-weight').value) || 0;
+      const q = parseFloat(r.querySelector('.i-qty').value) || 1;
+      totalWeight += w * q;
+    });
+    div.querySelector('.bag-count').textContent = rows.length;
+    div.querySelector('.bag-weight').textContent = totalWeight.toFixed(2);
+    updateTotalWeight();
+  }
+
+  if (data.name) div.querySelector('.bag-name').value = data.name;
+  (data.items || []).forEach(addItem);
+
+  div.querySelector('.bag-add').onclick = () => { addItem(); autoSave(); };
+  div.querySelector('.bag-del').onclick = () => { div.remove(); updateTotalWeight(); autoSave(); };
+  div.querySelector('.bag-name').addEventListener('input', autoSave);
+
+  div._updateStats = updateBagStats;
+  updateBagStats();
+  return div;
+}
+
+function updateTotalWeight() {
+  let total = 0;
+  $$('.bag').forEach(bag => {
+    const w = parseFloat(bag.querySelector('.bag-weight').textContent) || 0;
+    total += w;
+  });
+  // вес снаряжения
+  $$('#equipList .list-card').forEach(card => {
+    const w = parseFloat(card.querySelector('.f-desc')?.dataset.weight) || 0;
+    total += w;
+  });
+  const el = $('#totalWeight');
+  if (el) el.textContent = total.toFixed(2);
+}
+
+/* ---- ЯЧЕЙКИ ЗАКЛИНАНИЙ ---- */
+function renderSlots() {
+  const box = $('#slotsContainer');
+  box.innerHTML = '';
+
+  Object.entries(SLOTS_CONFIG).forEach(([circle, count]) => {
+    const block = document.createElement('div');
+    block.className = 'circle-block';
+    block.innerHTML = `
+      <div class="circle-title">${circle} круг — ${count} ячеек</div>
+      <div class="slots-strip-wrap">
+        <button class="arrow arrow-left">‹</button>
+        <div class="slots-strip"></div>
+        <button class="arrow arrow-right">›</button>
+      </div>
+    `;
+    const strip = block.querySelector('.slots-strip');
+    for (let i = 1; i <= count; i++) {
+      const slot = document.createElement('div');
+      slot.className = 'slot';
+      slot.dataset.slotId = `${circle}-${i}`;
+      slot.innerHTML = `
+        <span class="slot-num">${i}</span>
+        <div class="slot-img-box">
+          <img style="display:none">
+          <span class="ph">Пусто</span>
+        </div>
+        <button class="slot-clear" style="display:none">✖</button>
       `;
-      const input = card.querySelector('input[type="file"]');
-      card.addEventListener('click', e => {
-        if (e.target.classList.contains('slot-clear')) return;
-        input.click();
-      });
-      input.addEventListener('change', async e => {
+      const imgBox = slot.querySelector('.slot-img-box');
+      const img = slot.querySelector('img');
+      const ph = slot.querySelector('.ph');
+      const clear = slot.querySelector('.slot-clear');
+
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = 'image/*';
+      fileInput.style.display = 'none';
+      slot.appendChild(fileInput);
+
+      imgBox.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', e => {
         const f = e.target.files[0];
         if (!f) return;
-        const url = await fileToDataURL(f);
-        slotsData[id] = { image: url };
-        renderSlots();
-        autoSave();
+        const reader = new FileReader();
+        reader.onload = ev => {
+          img.src = ev.target.result;
+          img.style.display = 'block';
+          ph.style.display = 'none';
+          clear.style.display = 'block';
+          autoSave();
+        };
+        reader.readAsDataURL(f);
       });
-      card.querySelector('.slot-clear')?.addEventListener('click', e => {
+      clear.addEventListener('click', e => {
         e.stopPropagation();
-        delete slotsData[id];
-        renderSlots();
+        img.src = '';
+        img.style.display = 'none';
+        ph.style.display = 'block';
+        clear.style.display = 'none';
         autoSave();
       });
-      row.appendChild(card);
+
+      strip.appendChild(slot);
     }
-    section.appendChild(row);
-    body.appendChild(section);
+    block.querySelector('.arrow-left').onclick = () => strip.scrollBy({ left: -460, behavior: 'smooth' });
+    block.querySelector('.arrow-right').onclick = () => strip.scrollBy({ left: 460, behavior: 'smooth' });
+    box.appendChild(block);
   });
 }
 
-/* ============================================================
-   ИНВЕНТАРЬ — СУМКИ
-   ============================================================ */
-function createBag(data = {}) {
-  const bag = document.createElement('div');
-  bag.className = 'bag';
-  bag.dataset.uid = nextId();
-  bag.innerHTML = `
-    <div class="bag-header">
-      <input type="text" class="bag-name" placeholder="Название сумки" value="${data.name || 'Сумка'}">
-      <input type="text" class="bag-cells" placeholder="Ячеек" value="${data.cells || ''}">
-      <div class="bag-weight">Вес: <span>0</span></div>
-      <button class="btn btn-mini btn-add-item">+ предмет</button>
-      <button class="list-del bag-del" title="Удалить сумку">✖</button>
-    </div>
-    <div class="bag-body">
-      <div class="bag-items"></div>
-    </div>
-  `;
-
-  const items = bag.querySelector('.bag-items');
-  const weightEl = bag.querySelector('.bag-weight span');
-
-  bag.querySelector('.bag-name').addEventListener('input', autoSave);
-  bag.querySelector('.bag-cells').addEventListener('input', autoSave);
-
-  bag.querySelector('.bag-del').addEventListener('click', () => {
-    bag.remove();
-    recalcWeights();
-    autoSave();
-  });
-
-  bag.querySelector('.btn-add-item').addEventListener('click', () => {
-    addBagItem(items, {});
-    recalcWeights();
-    autoSave();
-  });
-
-  (data.items || []).forEach(it => addBagItem(items, it));
-
-  bag._recalc = () => {
-    let sum = 0;
-    items.querySelectorAll('.bag-item').forEach(row => {
-      const qty = parseFloat(row.querySelector('[data-f="qty"]').value) || 0;
-      const w   = parseFloat(row.querySelector('[data-f="weight"]').value) || 0;
-      sum += qty * w;
-    });
-    weightEl.textContent = sum.toFixed(2);
-    return sum;
-  };
-
-  return bag;
-}
-
-function addBagItem(container, data = {}) {
-  const row = document.createElement('div');
-  row.className = 'bag-item';
-  row.innerHTML = `
-    <input type="number" data-f="num"    placeholder="#" value="${data.num || ''}">
-    <input type="text"   data-f="name"   placeholder="Название" value="${data.name || ''}">
-    <input type="text"   data-f="desc"   placeholder="Описание" value="${data.desc || ''}">
-    <input type="number" data-f="qty"    placeholder="Кол-во" value="${data.qty || ''}">
-    <input type="number" step="0.1" data-f="weight" placeholder="Вес" value="${data.weight || ''}">
-    <button class="list-del item-del" title="Удалить">✖</button>
-  `;
-  row.querySelector('.item-del').addEventListener('click', () => {
-    row.remove();
-    recalcWeights();
-    autoSave();
-  });
-  row.querySelectorAll('input').forEach(i => {
-    i.addEventListener('input', () => {
-      recalcWeights();
-      autoSave();
-    });
-  });
-  container.appendChild(row);
-}
-
-function collectBags() {
-  const c = $('#bagContainer');
-  if (!c) return [];
-  return $$('.bag', c).map(bag => ({
-    name:  bag.querySelector('.bag-name').value,
-    cells: bag.querySelector('.bag-cells').value,
-    items: $$('.bag-item', bag).map(row => ({
-      num:    row.querySelector('[data-f="num"]').value,
-      name:   row.querySelector('[data-f="name"]').value,
-      desc:   row.querySelector('[data-f="desc"]').value,
-      qty:    row.querySelector('[data-f="qty"]').value,
-      weight: row.querySelector('[data-f="weight"]').value
-    }))
-  }));
-}
-
-function restoreBags(list) {
-  const c = $('#bagContainer');
-  if (!c) return;
-  c.innerHTML = '';
-  (list || []).forEach(b => c.appendChild(createBag(b)));
-  recalcWeights();
-}
-
-function recalcWeights() {
-  let total = 0;
-  $$('#bagContainer .bag').forEach(bag => {
-    if (bag._recalc) total += bag._recalc();
-  });
-  $$('#equipList .list-item').forEach(it => {
-    const extra = it.querySelector('.item-extra');
-    if (extra) {
-      const n = parseFloat((extra.value || '').replace(/[^\d.\-]/g, ''));
-      if (!isNaN(n)) total += n;
-    }
-  });
-  const tw = $('#totalWeight');
-  if (tw) tw.textContent = total.toFixed(2);
-}
-
-/* ============================================================
-   СБОР ДАННЫХ
-   ============================================================ */
+/* ---- СБОР ДАННЫХ ---- */
 function collectData() {
-  const data = { fields: {}, skills: {}, spells: [], slots: slotsData };
+  const data = { fields: {}, skills: {}, subclasses: [], spells: [], effects: [], actives: [], passives: [], bags: [], equip: [], slots: {} };
 
   $$('[data-key]').forEach(el => data.fields[el.dataset.key] = el.value);
   $$('[data-skill]').forEach(el => data.skills[el.dataset.skill] = el.value);
 
-  data.spells = collectSpells();
+  // подклассы
+  $$('#subclassList .subclass').forEach(sc => {
+    data.subclasses.push({
+      name: sc.querySelector('.sc-name').value,
+      desc: sc.querySelector('.sc-desc').value
+    });
+  });
 
-  data.subclasses = collectList('subclassList');
-  data.effects    = collectList('effectList');
-  data.actives    = collectList('activeList');
-  data.passives   = collectList('passiveList');
-  data.equipment  = collectList('equipList');
+  // списки-карточки
+  const collectList = (containerId, kind) => {
+    $$(`#${containerId} .list-card`).forEach(card => {
+      const img = card.querySelector('img');
+      data[kind].push({
+        circle: card.querySelector('.f-circle')?.value,
+        name: card.querySelector('.f-name').value,
+        desc: card.querySelector('.f-desc').value,
+        img: img && img.src && img.src.startsWith('data:') ? img.src : ''
+      });
+    });
+  };
+  collectList('spellContainer', 'spells');
+  collectList('effectList', 'effects');
+  collectList('activeList', 'actives');
+  collectList('passiveList', 'passives');
+  collectList('equipList', 'equip');
 
-  data.bags = collectBags();
+  // сумки
+  $$('#bagContainer .bag').forEach(bag => {
+    const items = [];
+    bag.querySelectorAll('.bag-item').forEach(r => {
+      items.push({
+        num: r.querySelector('.i-num').value,
+        name: r.querySelector('.i-name').value,
+        desc: r.querySelector('.i-desc').value,
+        qty: r.querySelector('.i-qty').value,
+        weight: r.querySelector('.i-weight').value
+      });
+    });
+    data.bags.push({ name: bag.querySelector('.bag-name').value, items });
+  });
+
+  // ячейки
+  $$('.slot').forEach(slot => {
+    const img = slot.querySelector('img');
+    if (img && img.src && img.src.startsWith('data:')) {
+      data.slots[slot.dataset.slotId] = img.src;
+    }
+  });
 
   return data;
 }
 
-/* ============================================================
-   ЗАГРУЗКА ДАННЫХ
-   ============================================================ */
-function applyData(data) {
-  if (!data) return;
+/* ---- ЗАГРУЗКА ДАННЫХ ---- */
+function applyData(d) {
+  if (!d) return;
 
-  if (data.fields) $$('[data-key]').forEach(el => {
-    if (data.fields[el.dataset.key] !== undefined)
-      el.value = data.fields[el.dataset.key];
+  // поля
+  if (d.fields) $$('[data-key]').forEach(el => {
+    if (d.fields[el.dataset.key] !== undefined) el.value = d.fields[el.dataset.key];
+  });
+  if (d.skills) $$('[data-skill]').forEach(el => {
+    if (d.skills[el.dataset.skill] !== undefined) el.value = d.skills[el.dataset.skill];
   });
 
-  if (data.skills) $$('[data-skill]').forEach(el => {
-    if (data.skills[el.dataset.skill] !== undefined)
-      el.value = data.skills[el.dataset.skill];
-  });
+  // подклассы
+  $('#subclassList').innerHTML = '';
+  (d.subclasses || []).forEach(sc => $('#subclassList').appendChild(createSubclass(sc)));
 
-  restoreSpells(data.spells);
-  restoreList('subclassList', data.subclasses);
-  restoreList('effectList',   data.effects);
-  restoreList('activeList',   data.actives);
-  restoreList('passiveList',  data.passives);
-  restoreList('equipList',    data.equipment);
-  restoreBags(data.bags);
+  // списки
+  const fill = (containerId, kind, items) => {
+    $(`#${containerId}`).innerHTML = '';
+    (items || []).forEach(item => $(`#${containerId}`).appendChild(createListCard(kind, item)));
+  };
+  fill('spellContainer', 'spell', d.spells);
+  fill('effectList', 'effect', d.effects);
+  fill('activeList', 'active', d.actives);
+  fill('passiveList', 'passive', d.passives);
+  fill('equipList', 'equip', d.equip);
 
-  slotsData = data.slots || {};
-  renderSlots();
+  // сумки
+  $('#bagContainer').innerHTML = '';
+  (d.bags || []).forEach(b => $('#bagContainer').appendChild(createBag(b)));
+
+  // ячейки
+  if (d.slots) {
+    Object.entries(d.slots).forEach(([slotId, src]) => {
+      const slot = document.querySelector(`[data-slot-id="${slotId}"]`);
+      if (slot) {
+        const img = slot.querySelector('img');
+        const ph = slot.querySelector('.ph');
+        const clear = slot.querySelector('.slot-clear');
+        img.src = src;
+        img.style.display = 'block';
+        if (ph) ph.style.display = 'none';
+        clear.style.display = 'block';
+      }
+    });
+  }
+
+  updateTotalWeight();
 }
 
-/* ============================================================
-   СОХРАНЕНИЕ
-   ============================================================ */
+/* ---- СОХРАНЕНИЕ ---- */
 let saveTimer = null;
 function autoSave() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(collectData()));
-    } catch (e) {
-      console.warn('Не сохранилось (возможно, много картинок):', e);
-    }
-  }, 500);
-}
-
-function saveNow() {
-  try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(collectData()));
-    toast('💾 Сохранено');
-  } catch (e) {
-    toast('⚠ Слишком много данных для localStorage');
-  }
+  }, 400);
 }
-
+function saveNow() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(collectData()));
+  toast('💾 Сохранено');
+}
 function loadFromStorage() {
   const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return;
-  try { applyData(JSON.parse(raw)); }
-  catch (e) { console.warn('Ошибка чтения', e); }
+  if (raw) { try { applyData(JSON.parse(raw)); } catch (e) { console.warn(e); } }
 }
 
-/* ============================================================
-   ЭКСПОРТ / ИМПОРТ
-   ============================================================ */
+/* ---- ЭКСПОРТ / ИМПОРТ ---- */
 function exportJSON() {
   const data = collectData();
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -505,39 +440,46 @@ function exportJSON() {
   URL.revokeObjectURL(url);
   toast('⬇ Экспортировано');
 }
-
 function importJSON(file) {
   const reader = new FileReader();
   reader.onload = e => {
     try {
-      const data = JSON.parse(e.target.result);
-      applyData(data);
+      const d = JSON.parse(e.target.result);
+      applyData(d);
       saveNow();
       toast('⬆ Импортировано');
-    } catch { toast('✖ Ошибка файла'); }
+    } catch (err) { toast('✖ Ошибка файла'); }
   };
   reader.readAsText(file);
 }
 
-/* ============================================================
-   СБРОС
-   ============================================================ */
+/* ---- СБРОС ---- */
 function resetAll() {
   if (!confirm('Удалить все данные персонажа?')) return;
   localStorage.removeItem(STORAGE_KEY);
   $$('[data-key], [data-skill]').forEach(el => el.value = '');
-  const sc = $('#spellContainer'); if (sc) sc.innerHTML = '';
-  ['subclassList','effectList','activeList','passiveList','equipList','bagContainer']
-    .forEach(id => { const el = $('#' + id); if (el) el.innerHTML = ''; });
-  slotsData = {};
+  ['subclassList','spellContainer','effectList','activeList','passiveList','bagContainer','equipList'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.innerHTML = '';
+  });
   renderSlots();
-  recalcWeights();
+  updateTotalWeight();
   toast('✖ Сброшено');
 }
 
-/* ============================================================
-   ИНИЦИАЛИЗАЦИЯ
-   ============================================================ */
+/* ---- СКРЫТИЕ СПИСКОВ ---- */
+function initToggles() {
+  $$('.btn-toggle').forEach(btn => {
+    btn.onclick = () => {
+      const target = document.getElementById(btn.dataset.target);
+      if (!target) return;
+      target.classList.toggle('collapsed');
+      const hidden = target.classList.contains('collapsed');
+      btn.textContent = hidden ? '▸ Показать' : '▾ Скрыть';
+    };
+  });
+}
+
+/* ---- ИНИЦИАЛИЗАЦИЯ ---- */
 function init() {
   renderSkills();
   renderSlots();
@@ -545,49 +487,25 @@ function init() {
 
   document.addEventListener('input', autoSave);
 
-  const bind = (id, fn) => { const el = $(id); if (el) el.onclick = fn; };
-
-  bind('#saveBtn',   saveNow);
-  bind('#exportBtn', exportJSON);
-  bind('#importBtn', () => { const f = $('#importFile'); if (f) f.click(); });
-  bind('#resetBtn',  resetAll);
-
-  const imp = $('#importFile');
-  if (imp) imp.onchange = e => {
+  $('#saveBtn').onclick   = saveNow;
+  $('#exportBtn').onclick = exportJSON;
+  $('#importBtn').onclick = () => $('#importFile').click();
+  $('#resetBtn').onclick  = resetAll;
+  $('#importFile').onchange = e => {
     if (e.target.files[0]) importJSON(e.target.files[0]);
     e.target.value = '';
   };
 
-  bind('#addSubclassBtn', () => createListItem({ container: $('#subclassList'), title: 'Новый подкласс' }));
-  bind('#addEffectBtn',   () => createListItem({ container: $('#effectList'),   title: 'Новый эффект' }));
-  bind('#addActiveBtn',   () => createListItem({ container: $('#activeList'),   title: 'Новый активный навык' }));
-  bind('#addPassiveBtn',  () => createListItem({ container: $('#passiveList'),  title: 'Новый пассивный навык' }));
-  bind('#addEquipBtn',    () => createListItem({ container: $('#equipList'),    title: 'Новое снаряжение', extra: '0' }));
+  $('#addSubclassBtn').onclick = () => { $('#subclassList').appendChild(createSubclass()); autoSave(); };
+  $('#addSpellBtn').onclick    = () => { $('#spellContainer').appendChild(createListCard('spell')); autoSave(); };
+  $('#addEffectBtn').onclick   = () => { $('#effectList').appendChild(createListCard('effect')); autoSave(); };
+  $('#addActiveBtn').onclick   = () => { $('#activeList').appendChild(createListCard('active')); autoSave(); };
+  $('#addPassiveBtn').onclick  = () => { $('#passiveList').appendChild(createListCard('passive')); autoSave(); };
+  $('#addBagBtn').onclick      = () => { $('#bagContainer').appendChild(createBag()); autoSave(); };
+  $('#addEquipBtn').onclick    = () => { $('#equipList').appendChild(createListCard('equip')); autoSave(); };
 
-  bind('#addSpellBtn', () => {
-    const c = $('#spellContainer');
-    if (c) c.appendChild(createSpell());
-    autoSave();
-  });
-
-  bind('#addBagBtn', () => {
-    const c = $('#bagContainer');
-    if (c) c.appendChild(createBag({ name: 'Сумка', items: [] }));
-    recalcWeights();
-    autoSave();
-  });
-
-  bind('#openSlotsBtn',  () => { renderSlots(); $('#slotsModal')?.classList.add('show'); });
-  bind('#closeSlotsBtn', () => $('#slotsModal')?.classList.remove('show'));
-
-  const modal = $('#slotsModal');
-  if (modal) modal.addEventListener('click', e => {
-    if (e.target.id === 'slotsModal') modal.classList.remove('show');
-  });
-
-  recalcWeights();
+  initToggles();
   toast('☠ Лист персонажа загружен');
 }
 
-document.addEventListener('DOMContentLoaded', init);
 document.addEventListener('DOMContentLoaded', init);
