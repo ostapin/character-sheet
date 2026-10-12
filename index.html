@@ -1,1 +1,232 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Лист персонажа — Хань Фу</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
+<header class="topbar">
+  <div class="logo">☠ <span>Лист персонажа</span></div>
+  <div class="actions">
+    <button id="saveBtn" class="btn btn-green">💾 Сохранить</button>
+    <button id="exportBtn" class="btn">⬇ Экспорт</button>
+    <button id="importBtn" class="btn">⬆ Импорт</button>
+    <input type="file" id="importFile" accept=".json" hidden>
+    <button id="resetBtn" class="btn btn-danger">✖ Сброс</button>
+  </div>
+</header>
+
+<main class="grid">
+
+  <!-- ШАПКА ПЕРСОНАЖА -->
+  <section class="card card-wide">
+    <h2>Персонаж</h2>
+    <div class="row">
+      <div class="field">
+        <label>Имя</label>
+        <input type="text" data-key="name" placeholder="Хань Фу">
+      </div>
+      <div class="field">
+        <label>Раса</label>
+        <input type="text" data-key="race" placeholder="Шанец">
+      </div>
+      <div class="field">
+        <label>Архетип</label>
+        <input type="text" data-key="archetype" placeholder="Жрец">
+      </div>
+      <div class="field">
+        <label>Размер</label>
+        <input type="text" data-key="size" placeholder="Средний">
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Опыт</label>
+        <input type="text" data-key="xp" placeholder="47 ???">
+      </div>
+      <div class="field">
+        <label>Дополнительно</label>
+        <input type="text" data-key="extra" placeholder="">
+      </div>
+    </div>
+  </section>
+
+  <!-- ОСНОВНЫЕ ХАРАКТЕРИСТИКИ -->
+  <section class="card">
+    <h2>Общие характеристики</h2>
+    <div class="stat-grid">
+      <div class="stat">
+        <label>Здоровье</label>
+        <input type="number" data-key="hp" placeholder="30">
+      </div>
+      <div class="stat">
+        <label>Защита</label>
+        <input type="text" data-key="defense" placeholder="9+1+2">
+      </div>
+      <div class="stat">
+        <label>Скорость</label>
+        <input type="number" data-key="speed" placeholder="6">
+      </div>
+      <div class="stat">
+        <label>Вера</label>
+        <input type="number" data-key="faith" placeholder="-70">
+      </div>
+    </div>
+  </section>
+
+  <!-- КЛАССЫ И ПОДКЛАССЫ -->
+  <section class="card">
+    <h2>Классы</h2>
+    <div class="field">
+      <label>Классы и подклассы</label>
+      <textarea data-key="classes" rows="6" placeholder="Душегуб 1, Подражатель 2, Некромант 2, Колдун 2..."></textarea>
+    </div>
+  </section>
+
+  <!-- РАЗУМ -->
+  <section class="card">
+    <h2>Разум</h2>
+    <div class="skill-list" data-group="mind"></div>
+  </section>
+
+  <!-- ТЕЛО -->
+  <section class="card">
+    <h2>Тело</h2>
+    <div class="skill-list" data-group="body"></div>
+  </section>
+
+  <!-- ГАРМОНИЯ -->
+  <section class="card">
+    <h2>Гармония</h2>
+    <div class="skill-list" data-group="harmony"></div>
+  </section>
+
+  <!-- ФОКУС И СПЕЦИАЛИЗАЦИЯ -->
+  <section class="card">
+    <h2>Фокус и специализация</h2>
+    <div class="field">
+      <label>Фокус</label>
+      <input type="text" data-key="focus" placeholder="Тёмные ритуалы">
+    </div>
+    <div class="field">
+      <label>Специализация</label>
+      <input type="text" data-key="spec" placeholder="Режущие">
+    </div>
+    <div class="field">
+      <label>Мультифокус</label>
+      <input type="text" data-key="multifocus" placeholder="Нет">
+    </div>
+    <div class="field">
+      <label>Вторая специализация</label>
+      <input type="text" data-key="spec2" placeholder="Волшебник">
+    </div>
+  </section>
+
+  <!-- ЯЧЕЙКИ ЗАКЛИНАНИЙ -->
+  <section class="card">
+    <h2>Ячейки заклинаний</h2>
+    <div class="slot-grid">
+      <div class="slot">
+        <label>1 круг</label>
+        <input type="number" data-key="slot1" placeholder="8">
+      </div>
+      <div class="slot">
+        <label>2 круг</label>
+        <input type="number" data-key="slot2" placeholder="7">
+      </div>
+      <div class="slot">
+        <label>3 круг</label>
+        <input type="number" data-key="slot3" placeholder="3">
+      </div>
+      <div class="slot">
+        <label>4 круг</label>
+        <input type="number" data-key="slot4" placeholder="0">
+      </div>
+      <div class="slot">
+        <label>5 круг</label>
+        <input type="number" data-key="slot5" placeholder="0">
+      </div>
+    </div>
+  </section>
+
+  <!-- ЗАКЛИНАНИЯ ПО КРУГАМ -->
+  <section class="card card-wide">
+    <h2>Заклинания</h2>
+    <div id="spellContainer"></div>
+    <button class="btn btn-add" id="addSpellBtn">+ Добавить заклинание</button>
+  </section>
+
+  <!-- ЭФФЕКТЫ И НАВЫКИ -->
+  <section class="card card-wide">
+    <h2>Эффекты и навыки</h2>
+    <textarea data-key="effects" rows="6" placeholder="Перезарядка ячейки, Покров мрака, Тяга..."></textarea>
+  </section>
+
+  <section class="card card-wide">
+    <h2>Активные навыки</h2>
+    <textarea data-key="activeSkills" rows="4" placeholder="Оберег, Святой свет, Контрзаклинание..."></textarea>
+  </section>
+
+  <section class="card card-wide">
+    <h2>Пассивные навыки</h2>
+    <textarea data-key="passiveSkills" rows="4" placeholder="Человеческий фактор, Стеклянный сосуд..."></textarea>
+  </section>
+
+  <!-- ИНВЕНТАРЬ -->
+  <section class="card card-wide">
+    <h2>Инвентарь</h2>
+    <table class="inv-table">
+      <thead>
+        <tr>
+          <th style="width:40px">#</th>
+          <th>Предмет</th>
+          <th>Описание</th>
+          <th style="width:80px">К-во</th>
+          <th style="width:80px">Вес</th>
+          <th style="width:40px"></th>
+        </tr>
+      </thead>
+      <tbody id="invBody"></tbody>
+    </table>
+    <button class="btn btn-add" id="addItemBtn">+ Добавить предмет</button>
+  </section>
+
+  <!-- СНАРЯЖЕНИЕ -->
+  <section class="card card-wide">
+    <h2>Снаряжение</h2>
+    <textarea data-key="equipment" rows="8" placeholder="Катана двуручная Хатори удзумари..."></textarea>
+  </section>
+
+  <!-- КОШЕЛЬ -->
+  <section class="card">
+    <h2>Кошель</h2>
+    <div class="stat-grid">
+      <div class="stat">
+        <label>Золото</label>
+        <input type="number" data-key="gold" placeholder="14">
+      </div>
+      <div class="stat">
+        <label>Серебро</label>
+        <input type="number" data-key="silver" placeholder="10">
+      </div>
+      <div class="stat">
+        <label>Токены</label>
+        <input type="number" data-key="tokens" placeholder="0">
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <span>Лист персонажа · Абсолютный Мир</span>
+</footer>
+
+<div id="toast" class="toast"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
