@@ -1,12 +1,11 @@
 /* ============================================================
-   ЛИСТ ПЕРСОНАЖА — вся логика
+   ЛИСТ ПЕРСОНАЖА — вся логика v4
    ============================================================ */
 
-const STORAGE_KEY = 'absolute_world_character_v3';
+const STORAGE_KEY = 'absolute_world_character_v4';
 const SLOTS_CONFIG = { 1: 8, 2: 7, 3: 6, 4: 5, 5: 4 };
 const FOCUS_SLOTS = 2;
 
-/* ---- ДАННЫЕ ---- */
 const SKILLS = {
   mind: [
     { key: 'insight', label: 'Проницательность' },
@@ -87,14 +86,14 @@ function renderSkills() {
       <div class="skill-row">
         <label>${s.label}</label>
         <input type="number" data-skill="${s.key}" placeholder="0">
-        <div class="skill-total" data-skill-total="${s.key}">0</div>
+        <div class="skill-total" data-skill-total="${s.key}" data-skill-name="${s.label}">0</div>
       </div>
     `).join('');
   });
 }
 
 /* ============================================================
-   БОНУСЫ (универсальный блок)
+   БОНУСЫ
    ============================================================ */
 function createBonusRow(data = {}) {
   const div = document.createElement('div');
@@ -115,8 +114,10 @@ function createBonusRow(data = {}) {
     <button class="bonus-del" title="Удалить">✖</button>
   `;
   div.querySelector('.bonus-del').onclick = () => { div.remove(); autoSave(); recalcAll(); };
-  div.querySelectorAll('input, select').forEach(el => el.addEventListener('change', () => { autoSave(); recalcAll(); }));
-  div.querySelectorAll('input').forEach(el => el.addEventListener('input', () => { autoSave(); recalcAll(); }));
+  div.querySelectorAll('input, select').forEach(el => {
+    el.addEventListener('change', () => { autoSave(); recalcAll(); });
+    el.addEventListener('input', () => { autoSave(); recalcAll(); });
+  });
   return div;
 }
 
@@ -141,8 +142,7 @@ function createBonusBlock(initial = []) {
 }
 
 /* ============================================================
-   УНИВЕРСАЛЬНАЯ КАРТОЧКА СПИСКА
-   kind: 'spell' | 'effect' | 'active' | 'passive' | 'equip'
+   КАРТОЧКА СПИСКА
    ============================================================ */
 function createListCard(kind, data = {}) {
   const div = document.createElement('div');
@@ -150,7 +150,6 @@ function createListCard(kind, data = {}) {
   div.dataset.kind = kind;
 
   const isSpell = kind === 'spell';
-  const isEquip = kind === 'equip';
 
   div.innerHTML = `
     <div class="card-img-box" title="Кликни, чтобы загрузить карточку">
@@ -179,20 +178,15 @@ function createListCard(kind, data = {}) {
   const imgBox = div.querySelector('.card-img-box');
   const img = imgBox.querySelector('img');
   const ph = imgBox.querySelector('.ph');
-  const nameInput = div.querySelector('.f-name');
-  const damageInput = div.querySelector('.f-damage');
-  const descInput = div.querySelector('.f-desc');
 
   if (isSpell && data.circle) div.querySelector('.f-circle').value = data.circle;
-  if (data.name) nameInput.value = data.name;
-  if (data.desc) descInput.value = data.desc;
+  if (data.name) div.querySelector('.f-name').value = data.name;
+  if (data.desc) div.querySelector('.f-desc').value = data.desc;
   if (data.img) { img.src = data.img; img.style.display = 'block'; if (ph) ph.style.display = 'none'; }
 
-  // бонусы
   const bonusBlock = createBonusBlock(data.bonuses || []);
   div.querySelector('.bonus-block-slot').appendChild(bonusBlock);
 
-  // загрузка картинки
   const fileInput = document.createElement('input');
   fileInput.type = 'file';
   fileInput.accept = 'image/*';
@@ -212,7 +206,6 @@ function createListCard(kind, data = {}) {
     reader.readAsDataURL(f);
   });
 
-  // кнопка "положить в ячейку"
   if (isSpell) {
     div.querySelector('.slot-send-btn').onclick = e => {
       e.preventDefault();
@@ -226,7 +219,9 @@ function createListCard(kind, data = {}) {
   return div;
 }
 
-/* ---- Диалог "положить заклинание в ячейку" ---- */
+/* ============================================================
+   ОТПРАВИТЬ В ЯЧЕЙКУ
+   ============================================================ */
 function openSendToSlotDialog(spellCard) {
   const img = spellCard.querySelector('img');
   const src = img && img.src && img.src.startsWith('data:') ? img.src : '';
@@ -244,10 +239,12 @@ function openSendToSlotDialog(spellCard) {
   const slotImg = slot.querySelector('img');
   const ph = slot.querySelector('.ph');
   const clear = slot.querySelector('.slot-clear');
+  const buttons = slot.querySelector('.slot-buttons');
   slotImg.src = src;
   slotImg.style.display = 'block';
   if (ph) ph.style.display = 'none';
   clear.style.display = 'block';
+  if (buttons) buttons.style.display = 'flex';
   slot.classList.remove('used');
   autoSave();
   toast(`→ В ячейку ${circle}-${idx}`);
@@ -289,7 +286,7 @@ function createSubclass(data = {}) {
 }
 
 /* ============================================================
-   СУМКИ
+   СУМКИ С ВЛОЖЕННЫМИ СПИСКАМИ
    ============================================================ */
 function createBag(data = {}) {
   const div = document.createElement('div');
@@ -309,15 +306,63 @@ function createBag(data = {}) {
     const row = document.createElement('div');
     row.className = 'bag-item';
     row.innerHTML = `
-      <input type="number" class="i-num" placeholder="#" value="${item.num || ''}">
-      <input type="text" class="i-name" placeholder="Предмет" value="${item.name || ''}">
-      <input type="text" class="i-desc" placeholder="Описание" value="${item.desc || ''}">
-      <input type="number" class="i-qty" placeholder="Кол-во" value="${item.qty || ''}">
-      <input type="number" step="0.1" class="i-weight" placeholder="Вес" value="${item.weight || ''}">
-      <button class="item-del">✖</button>
+      <div class="bag-item-main">
+        <input type="number" class="i-num" placeholder="#" value="${item.num || ''}">
+        <input type="text" class="i-name" placeholder="Предмет" value="${item.name || ''}">
+        <input type="text" class="i-desc" placeholder="Описание" value="${item.desc || ''}">
+        <input type="number" class="i-qty" placeholder="Кол-во" value="${item.qty || ''}">
+        <input type="number" step="0.1" class="i-weight" placeholder="Вес" value="${item.weight || ''}">
+        <button class="item-del">✖</button>
+      </div>
+      <button class="bag-item-toggle" title="Раскрыть список">▾</button>
+      <div class="sub-items" style="display:none"></div>
     `;
+
+    const toggle = row.querySelector('.bag-item-toggle');
+    const subBox = row.querySelector('.sub-items');
+
+    function addSubItem(si = {}) {
+      const s = document.createElement('div');
+      s.className = 'sub-item';
+      s.innerHTML = `
+        <input type="text" class="s-name" placeholder="Название" value="${si.name || ''}">
+        <input type="number" class="s-qty" placeholder="Кол-во" value="${si.qty || ''}">
+        <input type="text" class="s-desc" placeholder="Описание" value="${si.desc || ''}">
+        <button class="sub-item-del">✖</button>
+      `;
+      s.querySelector('.sub-item-del').onclick = () => { s.remove(); autoSave(); };
+      s.querySelectorAll('input').forEach(el => el.addEventListener('input', autoSave));
+      subBox.appendChild(s);
+    }
+
+    if (item.subs && item.subs.length) {
+      item.subs.forEach(addSubItem);
+    }
+
+    // кнопка добавить подпункт — добавляется при первом раскрытии
+    let addSubBtn = null;
+    function ensureAddBtn() {
+      if (addSubBtn) return;
+      addSubBtn = document.createElement('button');
+      addSubBtn.className = 'btn-small';
+      addSubBtn.style.alignSelf = 'flex-start';
+      addSubBtn.style.marginTop = '4px';
+      addSubBtn.textContent = '+ подпункт';
+      addSubBtn.onclick = () => { addSubItem(); autoSave(); };
+      subBox.appendChild(addSubBtn);
+    }
+
+    toggle.onclick = e => {
+      e.stopPropagation();
+      const open = subBox.style.display === 'none';
+      subBox.style.display = open ? 'flex' : 'none';
+      toggle.textContent = open ? '▴' : '▾';
+      if (open) ensureAddBtn();
+    };
+
     row.querySelector('.item-del').onclick = () => { row.remove(); updateBagStats(); autoSave(); };
-    row.querySelectorAll('input').forEach(el => el.addEventListener('input', () => { updateBagStats(); autoSave(); }));
+    row.querySelectorAll('.bag-item-main input').forEach(el => el.addEventListener('input', () => { updateBagStats(); autoSave(); }));
+
     itemsBox.appendChild(row);
   }
 
@@ -356,13 +401,12 @@ function updateTotalWeight() {
 }
 
 /* ============================================================
-   ЯЧЕЙКИ ЗАКЛИНАНИЙ
+   ЯЧЕЙКИ
    ============================================================ */
 function renderSlots() {
   const box = $('#slotsContainer');
   box.innerHTML = '';
 
-  // ФОКУС (2 ячейки)
   const focusBlock = document.createElement('div');
   focusBlock.className = 'circle-block';
   focusBlock.innerHTML = `
@@ -381,7 +425,6 @@ function renderSlots() {
   focusBlock.querySelector('.arrow-right').onclick = () => focusStrip.scrollBy({ left: 470, behavior: 'smooth' });
   box.appendChild(focusBlock);
 
-  // КРУГИ 1-5
   Object.entries(SLOTS_CONFIG).forEach(([circle, count]) => {
     const block = document.createElement('div');
     block.className = 'circle-block';
@@ -429,7 +472,6 @@ function createSlotEl(slotId, num, canUse) {
   const useBtn = slot.querySelector('.slot-btn.use');
   const rollBtn = slot.querySelector('.slot-btn.roll');
 
-  // загрузка картинки
   const fileInput = document.createElement('input');
   fileInput.type = 'file';
   fileInput.accept = 'image/*';
@@ -452,7 +494,6 @@ function createSlotEl(slotId, num, canUse) {
     reader.readAsDataURL(f);
   });
 
-  // очистить
   clear.addEventListener('click', e => {
     e.stopPropagation();
     img.src = '';
@@ -464,39 +505,30 @@ function createSlotEl(slotId, num, canUse) {
     autoSave();
   });
 
-  // использовать / откат
   if (useBtn) {
     useBtn.addEventListener('click', e => {
       e.stopPropagation();
       slot.classList.toggle('used');
-      if (slot.classList.contains('used')) {
-        useBtn.textContent = '↺ Откат';
-        toast('✓ Использовано');
-      } else {
-        useBtn.textContent = '✓ Использовать';
-        toast('↺ Откат');
-      }
+      useBtn.textContent = slot.classList.contains('used') ? '↺ Откат' : '✓ Использовать';
+      toast(slot.classList.contains('used') ? '✓ Использовано' : '↺ Откат');
       autoSave();
     });
   }
 
-  // бросок
   rollBtn.addEventListener('click', e => {
     e.stopPropagation();
-    quickRoll(slot);
+    quickRoll();
   });
 
   return slot;
 }
 
 /* ============================================================
-   РАСЧЁТ БОНУСОВ
+   ПАРСЕР КУБИКОВ
    ============================================================ */
 function parseDice(str) {
-  // "+1д8" / "1d8" / "+2" / "1д4+1" / "-1"
   if (!str) return null;
   const clean = String(str).trim().replace(/д/g, 'd').replace(/\s/g, '');
-  // сумма простых форматов: 1d8, 2, +1
   const parts = clean.split(/(?=[+-])/).filter(Boolean);
   const result = { dice: [], flat: 0 };
   for (let p of parts) {
@@ -514,15 +546,33 @@ function parseDice(str) {
   return result;
 }
 
+/* ============================================================
+   РАСЧЁТ БОНУСОВ
+   ============================================================ */
 function gatherBonuses() {
-  /* Собирает все бонусы со всех карточек + подклассов */
   const all = [];
   $$('.bonus-row').forEach(row => {
     const target = row.querySelector('.bonus-target').value;
     const value = row.querySelector('.bonus-value').value;
     const condition = row.querySelector('.bonus-cond').value;
     if (!value) return;
-    all.push({ target, value, condition });
+
+    // определяем источник
+    let source = 'Неизвестно';
+    const listCard = row.closest('.list-card');
+    if (listCard) {
+      const name = listCard.querySelector('.f-name')?.value;
+      const kind = listCard.dataset.kind;
+      const kinds = { spell: 'Заклинание', effect: 'Эффект', active: 'Активный', passive: 'Пассивный', equip: 'Снаряжение' };
+      source = `${kinds[kind] || 'Карточка'}: ${name || '(без имени)'}`;
+    }
+    const subclass = row.closest('.subclass');
+    if (subclass) {
+      const name = subclass.querySelector('.sc-name')?.value;
+      source = `Подкласс: ${name || '(без имени)'}`;
+    }
+
+    all.push({ target, value, condition, source });
   });
   return all;
 }
@@ -530,7 +580,6 @@ function gatherBonuses() {
 function recalcAll() {
   const bonuses = gatherBonuses();
 
-  // Характеристики
   const bases = {
     hp: parseFloat($('[data-key="hp"]')?.value) || 0,
     defense: parseFloat($('[data-key="defense"]')?.value) || 0,
@@ -553,7 +602,6 @@ function recalcAll() {
     }
   });
 
-  // отображение
   $$('[data-total]').forEach(el => {
     const key = el.dataset.total;
     if (totals[key] !== undefined) el.textContent = totals[key];
@@ -562,6 +610,59 @@ function recalcAll() {
     const key = el.dataset.skillTotal;
     if (skillTotals[key] !== undefined) el.textContent = skillTotals[key];
   });
+}
+
+/* ============================================================
+   РАСШИФРОВКА ИТОГА (модалка)
+   ============================================================ */
+function showBreakdown(target, targetLabel) {
+  const bonuses = gatherBonuses();
+  const modal = $('#breakdownModal');
+  const title = $('#breakdownTitle');
+  const body = $('#breakdownBody');
+
+  title.textContent = 'Расшифровка: ' + targetLabel;
+
+  let base = 0;
+  if (target === 'hp') base = parseFloat($('[data-key="hp"]')?.value) || 0;
+  if (target === 'defense') base = parseFloat($('[data-key="defense"]')?.value) || 0;
+  if (target === 'speed') base = parseFloat($('[data-key="speed"]')?.value) || 0;
+  if (target.startsWith('skill_')) {
+    const key = target.replace('skill_', '');
+    base = parseFloat($(`[data-skill="${key}"]`)?.value) || 0;
+  }
+
+  const rows = [];
+  let total = base;
+  rows.push({ label: 'База', value: base, isBase: true });
+
+  bonuses.forEach(b => {
+    if (b.target === target) {
+      const p = parseDice(b.value);
+      if (p) {
+        total += p.flat;
+        rows.push({ label: b.source + (b.condition !== 'all' ? ` [${b.condition}]` : ''), value: p.flat });
+      }
+    }
+  });
+
+  if (rows.length === 1) {
+    body.innerHTML = `<div class="breakdown-empty">Нет бонусов к этой характеристике</div>`;
+  } else {
+    body.innerHTML = rows.map(r => `
+      <div class="breakdown-row ${r.isBase ? 'base' : ''}">
+        <span>${r.label}</span>
+        <span>${r.value > 0 && !r.isBase ? '+' : ''}${r.value}</span>
+      </div>
+    `).join('') + `
+      <div class="breakdown-row">
+        <span>ИТОГО</span>
+        <span>${total}</span>
+      </div>
+    `;
+  }
+
+  modal.classList.add('open');
 }
 
 /* ============================================================
@@ -587,13 +688,11 @@ function renderFaithThresholds(initial) {
 }
 
 function getFaithBonus(faith) {
-  /* Возвращает бонус к некро урону от веры */
   const rows = $$('#faithThresholds .faith-row').map(r => ({
     min: parseFloat(r.querySelector('.f-min').value) || 0,
     dice: r.querySelector('.f-dice').value
-  })).sort((a, b) => b.min - a.min); // сортировка от большего к меньшему
+  })).sort((a, b) => b.min - a.min);
 
-  // ищем первое совпадение: faith >= min
   for (const r of rows) {
     if (faith >= r.min) return r.dice;
   }
@@ -601,7 +700,7 @@ function getFaithBonus(faith) {
 }
 
 /* ============================================================
-   БРОСОК КУБИКОВ
+   БРОСОК
    ============================================================ */
 function rollDice(count, sides) {
   let total = 0;
@@ -614,10 +713,10 @@ function rollDice(count, sides) {
   return { total, rolls };
 }
 
-function quickRoll(slot) {
-  const toastMsg = prompt('Бросок — введи формулу (напр. 2д10)');
-  if (!toastMsg) return;
-  const p = parseDice(toastMsg);
+function quickRoll() {
+  const formula = prompt('Бросок — введи формулу (напр. 2д10)');
+  if (!formula) return;
+  const p = parseDice(formula);
   if (!p) { toast('Не понял формулу'); return; }
   let total = p.flat;
   let allRolls = [];
@@ -626,11 +725,11 @@ function quickRoll(slot) {
     total += r.total * Math.sign(d.count);
     allRolls.push(`${d.count}д${d.sides}: [${r.rolls.join(', ')}]`);
   });
-  alert(`🎲 ${toastMsg}\n\n${allRolls.join('\n')}\n\nИтог: ${total}`);
+  alert(`🎲 ${formula}\n\n${allRolls.join('\n')}\n\nИтог: ${total}`);
 }
 
 /* ============================================================
-   БОЕВОЙ РЕЖИМ
+   БОЙ
    ============================================================ */
 function openCombat() {
   const modal = $('#combatModal');
@@ -654,44 +753,43 @@ function openCombat() {
   const list = $('#combatList');
   const items = [];
 
-  // заклинания из ячеек (есть картинка)
+  // заклинания из ячеек
   $$('.slot').forEach(slot => {
     const img = slot.querySelector('img');
     if (img && img.src && img.src.startsWith('data:')) {
-      const slotId = slot.dataset.slotId;
       items.push({
         type: 'spell',
-        slotId,
-        img: img.src,
-        name: `Ячейка ${slotId}`,
-        damage: '' // урона нет, спросим вручную? лучше из связанного заклинания
+        slotId: slot.dataset.slotId,
+        name: `Ячейка ${slot.dataset.slotId}`,
+        damage: ''
       });
     }
   });
 
-  // атаки из снаряжения (у которых указан урон)
+  // снаряжение с уроном
   $$('#equipList .list-card').forEach(card => {
     const dmg = card.querySelector('.f-damage')?.value;
     const name = card.querySelector('.f-name')?.value;
-    if (dmg) {
-      items.push({
-        type: 'equip',
-        name: name || 'Снаряжение',
-        damage: dmg
-      });
-    }
+    if (dmg) items.push({ type: 'equip', name: name || 'Снаряжение', damage: dmg });
+  });
+
+  // заклинания из списка с уроном
+  $$('#spellContainer .list-card').forEach(card => {
+    const dmg = card.querySelector('.f-damage')?.value;
+    const name = card.querySelector('.f-name')?.value;
+    if (dmg) items.push({ type: 'spell-list', name: name || 'Заклинание', damage: dmg });
   });
 
   if (!items.length) {
-    list.innerHTML = `<div class="combat-empty">Нет заклинаний в ячейках<br>и нет снаряжения с уроном</div>`;
+    list.innerHTML = `<div class="combat-empty">Нет атак</div>`;
     return;
   }
 
-  items.forEach((it, i) => {
+  items.forEach(it => {
     const div = document.createElement('div');
     div.className = 'combat-item';
     div.innerHTML = `
-      <div class="combat-item-name">${it.type === 'spell' ? '🔮 ' : '⚔ '}${it.name}</div>
+      <div class="combat-item-name">${it.type === 'equip' ? '⚔ ' : '🔮 '}${it.name}</div>
       <div class="combat-item-sub">${it.damage || '— урон не указан —'}</div>
     `;
     div.onclick = () => {
@@ -705,7 +803,6 @@ function openCombat() {
 
 function selectCombatItem(item) {
   const result = $('#combatResult');
-  // базовая формула урона
   let damageFormula = item.damage;
   if (!damageFormula) {
     damageFormula = prompt('Укажи урон (напр. 2д10 некро)') || '';
@@ -713,34 +810,27 @@ function selectCombatItem(item) {
     item.damage = damageFormula;
   }
 
-  // определяем тип урона из строки
   const dmgType = detectDamageType(damageFormula);
-
-  // собираем модификаторы
   const bonuses = gatherBonuses();
   const mods = [];
 
   bonuses.forEach(b => {
-    // бонусы к урону
     if (b.target === 'dmg_all') mods.push({ name: 'Бонус', value: b.value });
     if (b.target === 'dmg_necro' && dmgType === 'necro') mods.push({ name: 'Бонус (некро)', value: b.value });
     if (b.target === 'dmg_fire' && dmgType === 'fire') mods.push({ name: 'Бонус (огонь)', value: b.value });
     if (b.target === 'dmg_cold' && dmgType === 'cold') mods.push({ name: 'Бонус (холод)', value: b.value });
     if (b.target === 'dmg_phys' && dmgType === 'phys') mods.push({ name: 'Бонус (физ)', value: b.value });
-    // условия из поля condition (например "только некро")
-    if (b.condition && b.condition !== 'all') {
-      if (b.condition === dmgType) mods.push({ name: 'Бонус (условие)', value: b.value });
+    if (b.condition && b.condition !== 'all' && b.condition === dmgType) {
+      mods.push({ name: 'Бонус (условие)', value: b.value });
     }
   });
 
-  // вера
   if (dmgType === 'necro') {
     const faith = parseFloat($('[data-key="faith"]')?.value) || 0;
     const faithBonus = getFaithBonus(faith);
     if (faithBonus) mods.push({ name: 'Вера (некро)', value: faithBonus });
   }
 
-  // рендер
   const baseDice = parseDice(damageFormula);
   let formulaText = `<span class="dice">${damageFormula}</span>`;
   mods.forEach(m => formulaText += ` + <span class="mod">${m.value} (${m.name})</span>`);
@@ -748,42 +838,29 @@ function selectCombatItem(item) {
   result.innerHTML = `
     <h3>${item.name}</h3>
     <div class="combat-formula">${formulaText}</div>
-    <div class="combat-total" id="combatTotal">
-      0
-      <small>нажми кнопку, чтобы бросить</small>
-    </div>
+    <div class="combat-total" id="combatTotal">0<small>нажми кнопку, чтобы бросить</small></div>
     <button class="combat-roll-btn" id="combatRollBtn">🎲 БРОСИТЬ</button>
   `;
 
   $('#combatRollBtn').onclick = () => {
     let total = 0;
-    let details = [];
-
-    // бросок базового урона
     if (baseDice) {
       baseDice.dice.forEach(d => {
         const r = rollDice(Math.abs(d.count), d.sides);
         total += r.total * Math.sign(d.count);
-        details.push(`${d.count}д${d.sides} → [${r.rolls.join(', ')}] = ${r.total}`);
       });
       total += baseDice.flat;
-      if (baseDice.flat) details.push(`флэт: ${baseDice.flat > 0 ? '+' : ''}${baseDice.flat}`);
     }
-
-    // модификаторы
     mods.forEach(m => {
       const p = parseDice(m.value);
       if (!p) return;
       p.dice.forEach(d => {
         const r = rollDice(Math.abs(d.count), d.sides);
         total += r.total * Math.sign(d.count);
-        details.push(`${m.name}: ${d.count}д${d.sides} → [${r.rolls.join(', ')}] = ${r.total}`);
       });
-      if (p.flat) { total += p.flat; details.push(`${m.name}: ${p.flat > 0 ? '+' : ''}${p.flat}`); }
+      if (p.flat) total += p.flat;
     });
-
-    const totalEl = $('#combatTotal');
-    totalEl.innerHTML = `${total}<small>итого урона</small>`;
+    $('#combatTotal').innerHTML = `${total}<small>итого урона</small>`;
     toast(`🎲 ${total} урона`);
   };
 }
@@ -798,13 +875,26 @@ function detectDamageType(str) {
 }
 
 /* ============================================================
-   СБОР И ЗАГРУЗКА
+   СБОР ДАННЫХ
    ============================================================ */
+function collectBonuses(container) {
+  const bonuses = [];
+  container.querySelectorAll('.bonus-row').forEach(row => {
+    bonuses.push({
+      target: row.querySelector('.bonus-target').value,
+      value: row.querySelector('.bonus-value').value,
+      condition: row.querySelector('.bonus-cond').value
+    });
+  });
+  return bonuses;
+}
+
 function collectData() {
   const data = {
     fields: {}, skills: {}, subclasses: [],
     spells: [], effects: [], actives: [], passives: [], equip: [],
-    bags: [], slots: {}, faith: []
+    bags: [], slots: {}, faith: [],
+    photo: $('#photoImg').src && $('#photoImg').src.startsWith('data:') ? $('#photoImg').src : ''
   };
   $$('[data-key]').forEach(el => data.fields[el.dataset.key] = el.value);
   $$('[data-skill]').forEach(el => data.skills[el.dataset.skill] = el.value);
@@ -839,12 +929,21 @@ function collectData() {
   $$('#bagContainer .bag').forEach(bag => {
     const items = [];
     bag.querySelectorAll('.bag-item').forEach(r => {
+      const subs = [];
+      r.querySelectorAll('.sub-item').forEach(s => {
+        subs.push({
+          name: s.querySelector('.s-name').value,
+          qty: s.querySelector('.s-qty').value,
+          desc: s.querySelector('.s-desc').value
+        });
+      });
       items.push({
         num: r.querySelector('.i-num').value,
         name: r.querySelector('.i-name').value,
         desc: r.querySelector('.i-desc').value,
         qty: r.querySelector('.i-qty').value,
-        weight: r.querySelector('.i-weight').value
+        weight: r.querySelector('.i-weight').value,
+        subs
       });
     });
     data.bags.push({ name: bag.querySelector('.bag-name').value, items });
@@ -867,18 +966,9 @@ function collectData() {
   return data;
 }
 
-function collectBonuses(container) {
-  const bonuses = [];
-  container.querySelectorAll('.bonus-row').forEach(row => {
-    bonuses.push({
-      target: row.querySelector('.bonus-target').value,
-      value: row.querySelector('.bonus-value').value,
-      condition: row.querySelector('.bonus-cond').value
-    });
-  });
-  return bonuses;
-}
-
+/* ============================================================
+   ЗАГРУЗКА
+   ============================================================ */
 function applyData(d) {
   if (!d) return;
 
@@ -888,6 +978,14 @@ function applyData(d) {
   if (d.skills) $$('[data-skill]').forEach(el => {
     if (d.skills[el.dataset.skill] !== undefined) el.value = d.skills[el.dataset.skill];
   });
+
+  if (d.photo) {
+    const img = $('#photoImg');
+    img.src = d.photo;
+    img.style.display = 'block';
+    const ph = $('#photoBox .photo-ph');
+    if (ph) ph.style.display = 'none';
+  }
 
   $('#subclassList').innerHTML = '';
   (d.subclasses || []).forEach(sc => $('#subclassList').appendChild(createSubclass(sc)));
@@ -923,7 +1021,6 @@ function applyData(d) {
   }
 
   renderFaithThresholds(d.faith);
-
   updateTotalWeight();
   recalcAll();
 }
@@ -947,7 +1044,6 @@ function loadFromStorage() {
   if (raw) { try { applyData(JSON.parse(raw)); } catch (e) { console.warn(e); } }
 }
 
-/* ЭКСПОРТ / ИМПОРТ */
 function exportJSON() {
   const data = collectData();
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -972,7 +1068,6 @@ function importJSON(file) {
   reader.readAsText(file);
 }
 
-/* СБРОС */
 function resetAll() {
   if (!confirm('Удалить все данные персонажа?')) return;
   localStorage.removeItem(STORAGE_KEY);
@@ -980,6 +1075,11 @@ function resetAll() {
   ['subclassList','spellContainer','effectList','activeList','passiveList','bagContainer','equipList','faithThresholds'].forEach(id => {
     const el = document.getElementById(id); if (el) el.innerHTML = '';
   });
+  const img = $('#photoImg');
+  img.src = '';
+  img.style.display = 'none';
+  const ph = $('#photoBox .photo-ph');
+  if (ph) ph.style.display = 'block';
   renderSlots();
   renderFaithThresholds();
   updateTotalWeight();
@@ -987,7 +1087,61 @@ function resetAll() {
   toast('✖ Сброшено');
 }
 
-/* TOGGLES */
+/* ============================================================
+   ФОТО ПЕРСОНАЖА
+   ============================================================ */
+function initPhoto() {
+  const box = $('#photoBox');
+  const img = $('#photoImg');
+  const ph = box.querySelector('.photo-ph');
+
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'image/*';
+  fileInput.style.display = 'none';
+  document.body.appendChild(fileInput);
+
+  box.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      img.src = ev.target.result;
+      img.style.display = 'block';
+      ph.style.display = 'none';
+      autoSave();
+    };
+    reader.readAsDataURL(f);
+  });
+}
+
+/* ============================================================
+   КЛИК ПО ИТОГАМ → РАСШИФРОВКА
+   ============================================================ */
+function initBreakdownClicks() {
+  document.addEventListener('click', e => {
+    const totalEl = e.target.closest('[data-total-btn]');
+    if (totalEl) {
+      const target = totalEl.dataset.totalBtn;
+      const labels = { hp: 'Здоровье', defense: 'Защита', speed: 'Скорость' };
+      showBreakdown(target, labels[target] || target);
+      return;
+    }
+    const skillTotal = e.target.closest('[data-skill-total]');
+    if (skillTotal) {
+      const target = 'skill_' + skillTotal.dataset.skillTotal;
+      const label = skillTotal.dataset.skillName;
+      showBreakdown(target, label);
+    }
+  });
+
+  $('#closeBreakdownBtn').onclick = () => $('#breakdownModal').classList.remove('open');
+}
+
+/* ============================================================
+   TOGGLES
+   ============================================================ */
 function initToggles() {
   $$('.btn-toggle').forEach(btn => {
     btn.onclick = () => {
@@ -999,7 +1153,9 @@ function initToggles() {
   });
 }
 
-/* INIT */
+/* ============================================================
+   INIT
+   ============================================================ */
 function init() {
   renderSkills();
   renderSlots();
@@ -1030,6 +1186,8 @@ function init() {
   $('#addEquipBtn').onclick    = () => { $('#equipList').appendChild(createListCard('equip')); autoSave(); };
   $('#addFaithBtn').onclick    = () => { $('#faithThresholds').appendChild(createFaithRow()); autoSave(); };
 
+  initPhoto();
+  initBreakdownClicks();
   initToggles();
   toast('☠ Лист персонажа загружен');
 }
