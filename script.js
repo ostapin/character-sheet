@@ -1,477 +1,1037 @@
-:root {
-  --bg: #0a0d0a;
-  --panel: #121712;
-  --panel-2: #182018;
-  --green: #4ade80;
-  --green-bright: #6ee7a0;
-  --green-dark: #14532d;
-  --green-glow: rgba(74, 222, 128, 0.35);
-  --text: #d1fae5;
-  --muted: #6b7d6b;
-  --border: #1f2e1f;
-  --danger: #b91c1c;
-  --gold: #facc15;
-  --shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+/* ============================================================
+   ЛИСТ ПЕРСОНАЖА — вся логика
+   ============================================================ */
+
+const STORAGE_KEY = 'absolute_world_character_v3';
+const SLOTS_CONFIG = { 1: 8, 2: 7, 3: 6, 4: 5, 5: 4 };
+const FOCUS_SLOTS = 2;
+
+/* ---- ДАННЫЕ ---- */
+const SKILLS = {
+  mind: [
+    { key: 'insight', label: 'Проницательность' },
+    { key: 'erudition', label: 'Эрудиция' },
+    { key: 'charm', label: 'Обаяние' },
+    { key: 'cunning', label: 'Хитрость' },
+    { key: 'concentration', label: 'Концентрация' }
+  ],
+  body: [
+    { key: 'athletics', label: 'Атлетика' },
+    { key: 'endurance', label: 'Стойкость' },
+    { key: 'instincts', label: 'Инстинкты' },
+    { key: 'reflexes', label: 'Рефлексы' },
+    { key: 'rage', label: 'Ярость' }
+  ],
+  harmony: [
+    { key: 'acrobatics', label: 'Акробатика' },
+    { key: 'creation', label: 'Созидание' },
+    { key: 'dexterity', label: 'Проворство' },
+    { key: 'grace', label: 'Грация' },
+    { key: 'accuracy', label: 'Точность' }
+  ]
+};
+
+const ALL_SKILLS = [
+  ...SKILLS.mind.map(s => ({ ...s, group: 'Разум' })),
+  ...SKILLS.body.map(s => ({ ...s, group: 'Тело' })),
+  ...SKILLS.harmony.map(s => ({ ...s, group: 'Гармония' }))
+];
+
+const BONUS_TARGETS = [
+  { value: 'defense', label: '🛡 Защита' },
+  { value: 'hp', label: '❤ Здоровье' },
+  { value: 'speed', label: '👟 Скорость' },
+  { value: 'faith', label: '🕯 Вера' },
+  { value: '__skills__', label: '── Навыки ──', disabled: true },
+  ...ALL_SKILLS.map(s => ({ value: 'skill_' + s.key, label: '  ' + s.label + ' (' + s.group + ')' })),
+  { value: '__damage__', label: '── Урон заклинаний ──', disabled: true },
+  { value: 'dmg_all', label: '  Урон (все типы)' },
+  { value: 'dmg_necro', label: '  Урон (некро)' },
+  { value: 'dmg_fire', label: '  Урон (огонь)' },
+  { value: 'dmg_cold', label: '  Урон (холод)' },
+  { value: 'dmg_phys', label: '  Урон (физический)' }
+];
+
+const DAMAGE_CONDITIONS = [
+  { value: 'all', label: 'Все типы' },
+  { value: 'necro', label: 'Только некро' },
+  { value: 'fire', label: 'Только огонь' },
+  { value: 'cold', label: 'Только холод' },
+  { value: 'phys', label: 'Только физический' }
+];
+
+const DEFAULT_FAITH = [
+  { min: '-30', dice: '1д4' },
+  { min: '-60', dice: '1д8' },
+  { min: '-90', dice: '1д12' }
+];
+
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 2200);
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  background: radial-gradient(circle at top, #0f1a0f 0%, #050705 70%);
-  color: var(--text);
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  min-height: 100vh;
-  padding-bottom: 40px;
-  line-height: 1.5;
+/* ============================================================
+   НАВЫКИ
+   ============================================================ */
+function renderSkills() {
+  Object.entries(SKILLS).forEach(([group, list]) => {
+    const box = document.querySelector(`[data-group="${group}"]`);
+    box.innerHTML = list.map(s => `
+      <div class="skill-row">
+        <label>${s.label}</label>
+        <input type="number" data-skill="${s.key}" placeholder="0">
+        <div class="skill-total" data-skill-total="${s.key}">0</div>
+      </div>
+    `).join('');
+  });
 }
 
-/* TOPBAR */
-.topbar {
-  position: sticky; top: 0; z-index: 100;
-  background: linear-gradient(180deg, #0f1a0f 0%, #0a0d0a 100%);
-  border-bottom: 1px solid var(--green-dark);
-  box-shadow: 0 2px 20px var(--green-glow);
-  padding: 14px 24px;
-  display: flex; justify-content: space-between; align-items: center;
-  flex-wrap: wrap; gap: 12px;
-}
-.logo {
-  color: var(--green); font-size: 20px; font-weight: 700;
-  letter-spacing: 1.5px; text-shadow: 0 0 12px var(--green-glow);
-  display: flex; align-items: center; gap: 10px;
-}
-.logo span { color: var(--green-bright); }
-.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+/* ============================================================
+   БОНУСЫ (универсальный блок)
+   ============================================================ */
+function createBonusRow(data = {}) {
+  const div = document.createElement('div');
+  div.className = 'bonus-row';
 
-/* BUTTONS */
-.btn {
-  background: var(--panel-2); color: var(--text);
-  border: 1px solid var(--border); border-radius: 8px;
-  padding: 8px 14px; font-size: 13px; font-weight: 600;
-  cursor: pointer; transition: all 0.2s ease; font-family: inherit;
-}
-.btn:hover {
-  border-color: var(--green); color: var(--green-bright);
-  box-shadow: 0 0 12px var(--green-glow); transform: translateY(-1px);
-}
-.btn-green {
-  background: linear-gradient(180deg, #14532d, #0f3d20);
-  border-color: var(--green); color: var(--green-bright);
-}
-.btn-green:hover {
-  background: linear-gradient(180deg, #166534, #14532d);
-  box-shadow: 0 0 18px var(--green-glow);
-}
-.btn-combat {
-  background: linear-gradient(180deg, #7f1d1d, #450a0a);
-  border-color: #dc2626; color: #fecaca;
-}
-.btn-combat:hover {
-  border-color: #ef4444; color: #fff;
-  box-shadow: 0 0 18px rgba(239, 68, 68, 0.5);
-}
-.btn-danger { border-color: #7f1d1d; color: #fca5a5; }
-.btn-danger:hover { border-color: var(--danger); color: #fecaca; box-shadow: 0 0 12px rgba(185, 28, 28, 0.4); }
-.btn-add {
-  width: 100%; margin-top: 12px; padding: 10px;
-  border-style: dashed; color: var(--green); background: transparent;
-}
-.btn-add:hover { background: rgba(74, 222, 128, 0.06); }
-.btn-small {
-  padding: 4px 8px; font-size: 11px;
-  background: var(--panel-2); border: 1px solid var(--border);
-  border-radius: 6px; color: var(--muted); cursor: pointer;
-  font-family: inherit; transition: all 0.2s;
-}
-.btn-small:hover { color: var(--green); border-color: var(--green); }
-.btn-toggle {
-  background: transparent; border: 1px solid var(--border);
-  color: var(--muted); padding: 6px 12px; border-radius: 6px;
-  font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit;
-}
-.btn-toggle:hover { color: var(--green); border-color: var(--green); }
+  const targetOptions = BONUS_TARGETS.map(t =>
+    `<option value="${t.value}" ${t.disabled ? 'disabled' : ''} ${data.target === t.value ? 'selected' : ''}>${t.label}</option>`
+  ).join('');
 
-/* GRID */
-.grid {
-  max-width: 1500px; margin: 24px auto; padding: 0 24px;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
-}
-.card-wide { grid-column: 1 / -1; }
-.card-half { display: contents; }
+  const condOptions = DAMAGE_CONDITIONS.map(c =>
+    `<option value="${c.value}" ${data.condition === c.value ? 'selected' : ''}>${c.label}</option>`
+  ).join('');
 
-/* CARD */
-.card {
-  background: linear-gradient(180deg, var(--panel) 0%, #0d120d 100%);
-  border: 1px solid var(--border); border-radius: 12px;
-  padding: 18px 20px; box-shadow: var(--shadow);
-  position: relative; overflow: hidden;
-}
-.card::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-  background: linear-gradient(90deg, transparent, var(--green), transparent);
-  opacity: 0.6;
-}
-.card h2 {
-  color: var(--green); font-size: 15px; text-transform: uppercase;
-  letter-spacing: 1.5px; margin-bottom: 14px; padding-bottom: 8px;
-  border-bottom: 1px solid var(--border); text-shadow: 0 0 8px var(--green-glow);
-}
-.section-header {
-  display: flex; justify-content: space-between; align-items: center;
-  border-bottom: 1px solid var(--border); margin-bottom: 14px; padding-bottom: 8px;
-}
-.section-header h2 { border: none; margin: 0; padding: 0; }
-
-/* FIELDS */
-.row {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px;
-}
-.field { display: flex; flex-direction: column; gap: 5px; }
-.field label, .stat label, .bonus-field label {
-  font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
-  color: var(--muted); font-weight: 600;
-}
-input[type="text"], input[type="number"], textarea, select {
-  background: #0a0f0a; border: 1px solid var(--border); border-radius: 6px;
-  padding: 8px 10px; color: var(--text); font-family: inherit;
-  font-size: 14px; transition: all 0.2s ease; width: 100%; resize: vertical;
-}
-input:focus, textarea:focus, select:focus {
-  outline: none; border-color: var(--green);
-  box-shadow: 0 0 10px var(--green-glow); background: #0d140d;
-}
-input::placeholder, textarea::placeholder { color: #3f4f3f; }
-
-/* STATS */
-.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
-.stat-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.stat {
-  background: var(--panel-2); border: 1px solid var(--border);
-  border-radius: 8px; padding: 10px 12px;
-  display: flex; flex-direction: column; gap: 6px;
-}
-.stat input { font-size: 18px; font-weight: 700; color: var(--green-bright); }
-.stat-total {
-  font-size: 12px; color: var(--muted); text-align: center;
-  padding-top: 4px; border-top: 1px solid var(--border); margin-top: 2px;
-}
-.stat-total b { color: var(--gold); font-size: 16px; }
-
-/* SKILLS */
-.skill-columns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
-.skill-col h3 {
-  color: var(--green-bright); font-size: 13px; text-transform: uppercase;
-  letter-spacing: 1.5px; margin-bottom: 10px; text-align: center;
-}
-.skill-list { display: flex; flex-direction: column; gap: 8px; }
-.skill-row {
-  display: grid; grid-template-columns: 1fr 60px 60px;
-  gap: 8px; align-items: center; padding: 6px 10px;
-  background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px;
-}
-.skill-row:hover { border-color: var(--green-dark); }
-.skill-row label {
-  font-size: 13px; color: var(--text); text-transform: none;
-  letter-spacing: 0; font-weight: 500;
-}
-.skill-row input {
-  text-align: center; padding: 4px 6px; font-size: 14px;
-  color: var(--green-bright); font-weight: 700;
-}
-.skill-total {
-  text-align: center; font-size: 14px; font-weight: 800;
-  color: var(--gold); padding: 4px 6px;
+  div.innerHTML = `
+    <select class="bonus-target">${targetOptions}</select>
+    <input type="text" class="bonus-value" placeholder="+1д8 / +2" value="${data.value || ''}">
+    <select class="bonus-cond">${condOptions}</select>
+    <button class="bonus-del" title="Удалить">✖</button>
+  `;
+  div.querySelector('.bonus-del').onclick = () => { div.remove(); autoSave(); recalcAll(); };
+  div.querySelectorAll('input, select').forEach(el => el.addEventListener('change', () => { autoSave(); recalcAll(); }));
+  div.querySelectorAll('input').forEach(el => el.addEventListener('input', () => { autoSave(); recalcAll(); }));
+  return div;
 }
 
-/* LIST CARD */
-.list-card {
-  background: var(--panel-2); border: 1px solid var(--border);
-  border-left: 3px solid var(--green); border-radius: 8px;
-  padding: 12px 14px; margin-bottom: 10px;
-  display: grid; grid-template-columns: 240px 1fr 40px;
-  gap: 14px; align-items: start;
-}
-.list-card .card-img-box {
-  width: 100%; min-height: 320px; background: #080b08;
-  border: 1px dashed var(--green-dark); border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; overflow: hidden; color: var(--muted);
-  font-size: 12px; text-align: center; padding: 8px; transition: all 0.2s;
-}
-.list-card .card-img-box:hover { border-color: var(--green); color: var(--green); }
-.list-card .card-img-box img { width: 100%; height: auto; display: block; }
-.list-card .card-fields { display: flex; flex-direction: column; gap: 8px; }
-.list-card textarea { min-height: 80px; font-size: 13px; }
-.list-del {
-  background: transparent; border: none; color: #7f1d1d;
-  font-size: 18px; cursor: pointer; padding: 4px; transition: color 0.2s;
-}
-.list-del:hover { color: #ef4444; }
-
-/* BONUSES */
-.bonuses-block {
-  background: #0a0f0a; border: 1px solid var(--border);
-  border-radius: 6px; padding: 8px 10px; margin-top: 4px;
-}
-.bonuses-title {
-  font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
-  color: var(--green); margin-bottom: 6px; font-weight: 700;
-  display: flex; justify-content: space-between; align-items: center;
-}
-.bonus-row {
-  display: grid; grid-template-columns: 1.5fr 1.2fr 1.2fr 30px;
-  gap: 6px; margin-bottom: 6px; align-items: center;
-}
-.bonus-row select, .bonus-row input {
-  padding: 4px 6px; font-size: 12px;
-}
-.bonus-del {
-  background: transparent; border: none; color: #7f1d1d;
-  font-size: 14px; cursor: pointer; padding: 2px;
-}
-.bonus-del:hover { color: #ef4444; }
-
-/* SUBCLASS */
-.subclass {
-  background: var(--panel-2); border: 1px solid var(--border);
-  border-left: 3px solid var(--green); border-radius: 8px;
-  padding: 10px 12px; margin-bottom: 10px;
-}
-.subclass-head { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-.subclass-head input {
-  flex: 1; font-weight: 700; color: var(--green-bright); cursor: pointer;
-}
-.subclass-head input:focus { cursor: text; }
-.subclass-toggle {
-  background: transparent; border: none; color: var(--green);
-  font-size: 16px; cursor: pointer; padding: 4px 8px;
-}
-.subclass-body { margin-top: 10px; display: none; }
-.subclass.open .subclass-body { display: block; }
-
-/* SLOTS */
-.circle-block { margin-bottom: 22px; }
-.circle-title {
-  color: var(--green-bright); font-size: 14px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px;
-  display: flex; align-items: center; gap: 10px;
-}
-.circle-title::before {
-  content: ''; width: 8px; height: 8px; background: var(--green);
-  border-radius: 50%; box-shadow: 0 0 10px var(--green-glow);
-}
-.slots-strip-wrap { position: relative; display: flex; align-items: center; gap: 6px; }
-.slots-strip {
-  display: flex; gap: 14px; overflow-x: auto;
-  scroll-behavior: smooth; padding: 6px 4px 14px; flex: 1;
-}
-.slots-strip::-webkit-scrollbar { height: 8px; }
-.slots-strip::-webkit-scrollbar-track { background: var(--bg); border-radius: 4px; }
-.slots-strip::-webkit-scrollbar-thumb { background: var(--green-dark); border-radius: 4px; }
-.slots-strip::-webkit-scrollbar-thumb:hover { background: var(--green); }
-.arrow {
-  background: var(--panel-2); border: 1px solid var(--border); color: var(--green);
-  width: 40px; height: 90px; border-radius: 6px; cursor: pointer;
-  font-size: 24px; font-weight: 700; transition: all 0.2s; flex-shrink: 0;
-}
-.arrow:hover {
-  background: var(--green-dark); color: var(--green-bright);
-  box-shadow: 0 0 12px var(--green-glow);
-}
-.slot {
-  min-width: 440px; width: 440px; background: #080b08;
-  border: 1px solid var(--border); border-radius: 10px;
-  padding: 12px; flex-shrink: 0;
-  display: flex; flex-direction: column; gap: 8px;
-  transition: all 0.2s; position: relative;
-}
-.slot:hover { border-color: var(--green); box-shadow: 0 0 12px var(--green-glow); }
-.slot.used { opacity: 0.4; filter: grayscale(1); }
-.slot-num {
-  position: absolute; top: 8px; left: 10px;
-  background: var(--green-dark); color: var(--green-bright);
-  font-size: 11px; font-weight: 700; padding: 2px 8px;
-  border-radius: 10px; z-index: 2;
-}
-.slot-img-box {
-  width: 100%; min-height: 560px; background: #0a0d0a;
-  border: 1px dashed var(--green-dark); border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; overflow: hidden; color: var(--muted);
-  font-size: 13px; text-align: center; padding: 8px; transition: all 0.2s;
-}
-.slot-img-box:hover { border-color: var(--green); color: var(--green); }
-.slot-img-box img { width: 100%; height: auto; object-fit: contain; }
-.slot-buttons {
-  display: flex; gap: 6px; justify-content: space-between;
-}
-.slot-btn {
-  flex: 1; padding: 8px; border-radius: 6px; font-family: inherit;
-  font-size: 12px; font-weight: 700; cursor: pointer;
-  transition: all 0.2s; border: 1px solid var(--border);
-  background: var(--panel-2); color: var(--text);
-}
-.slot-btn.use { color: var(--green-bright); border-color: var(--green); }
-.slot-btn.use:hover { background: var(--green-dark); }
-.slot-btn.roll { color: var(--gold); border-color: #854d0e; }
-.slot-btn.roll:hover { background: #422006; }
-.slot-clear {
-  background: rgba(185, 28, 28, 0.8); border: none; color: #fff;
-  width: 22px; height: 22px; border-radius: 50%; cursor: pointer;
-  font-size: 12px; position: absolute; top: 6px; right: 6px; z-index: 2;
-}
-.slot-clear:hover { background: #ef4444; }
-.slot-send-btn {
-  width: 100%; padding: 6px; border-radius: 6px; font-family: inherit;
-  font-size: 11px; font-weight: 700; cursor: pointer;
-  background: transparent; border: 1px dashed var(--green);
-  color: var(--green); transition: all 0.2s;
-}
-.slot-send-btn:hover { background: rgba(74, 222, 128, 0.1); }
-
-/* BAGS */
-.bag {
-  background: var(--panel-2); border: 1px solid var(--border);
-  border-left: 3px solid var(--green); border-radius: 10px;
-  padding: 14px; margin-bottom: 14px;
-}
-.bag-header {
-  display: flex; justify-content: space-between; align-items: center;
-  gap: 10px; margin-bottom: 12px; flex-wrap: wrap;
-}
-.bag-header input { flex: 1; min-width: 150px; font-weight: 700; color: var(--green-bright); }
-.bag-info { color: var(--muted); font-size: 12px; white-space: nowrap; }
-.bag-info b { color: var(--green-bright); }
-.bag-items { display: flex; flex-direction: column; gap: 8px; }
-.bag-item {
-  display: grid; grid-template-columns: 40px 1fr 1fr 70px 70px 36px;
-  gap: 8px; align-items: center; background: #0a0d0a;
-  border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px;
-}
-.bag-item input { padding: 6px 8px; font-size: 13px; }
-.bag-item .item-del {
-  background: transparent; border: none; color: #7f1d1d;
-  cursor: pointer; font-size: 16px;
-}
-.bag-item .item-del:hover { color: #ef4444; }
-
-/* TOTAL WEIGHT */
-.total-weight {
-  margin-top: 14px; padding: 12px 16px;
-  background: linear-gradient(90deg, var(--green-dark), transparent);
-  border-left: 4px solid var(--green); border-radius: 6px;
-  font-size: 16px; font-weight: 700; color: var(--green-bright);
-  text-shadow: 0 0 10px var(--green-glow);
+function createBonusBlock(initial = []) {
+  const div = document.createElement('div');
+  div.className = 'bonuses-block';
+  div.innerHTML = `
+    <div class="bonuses-title">
+      <span>⚡ Бонусы</span>
+      <button class="btn-small add-bonus">+ бонус</button>
+    </div>
+    <div class="bonuses-list"></div>
+  `;
+  const list = div.querySelector('.bonuses-list');
+  (initial || []).forEach(b => list.appendChild(createBonusRow(b)));
+  div.querySelector('.add-bonus').onclick = e => {
+    e.preventDefault();
+    list.appendChild(createBonusRow());
+    autoSave();
+  };
+  return div;
 }
 
-/* FAITH THRESHOLDS */
-.faith-row {
-  display: grid; grid-template-columns: 1fr 1fr 36px;
-  gap: 8px; margin-bottom: 8px; align-items: center;
-}
-.faith-row input { padding: 6px 8px; font-size: 13px; }
+/* ============================================================
+   УНИВЕРСАЛЬНАЯ КАРТОЧКА СПИСКА
+   kind: 'spell' | 'effect' | 'active' | 'passive' | 'equip'
+   ============================================================ */
+function createListCard(kind, data = {}) {
+  const div = document.createElement('div');
+  div.className = 'list-card';
+  div.dataset.kind = kind;
 
-/* COLLAPSED */
-.collapsed { display: none !important; }
+  const isSpell = kind === 'spell';
+  const isEquip = kind === 'equip';
 
-/* MODAL */
-.modal {
-  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85);
-  display: none; align-items: center; justify-content: center;
-  z-index: 500; padding: 20px;
-}
-.modal.open { display: flex; }
-.modal-content {
-  background: linear-gradient(180deg, #121712, #0a0d0a);
-  border: 1px solid var(--green-dark); border-radius: 14px;
-  box-shadow: 0 0 40px var(--green-glow);
-  width: 100%; max-width: 900px;
-  max-height: 90vh; display: flex; flex-direction: column;
-}
-.modal-wide { max-width: 1300px; }
-.modal-header {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 16px 22px; border-bottom: 1px solid var(--border);
-}
-.modal-header h2 { color: var(--green); font-size: 18px; letter-spacing: 1.5px; text-transform: uppercase; }
-.modal-close {
-  background: transparent; border: none; color: var(--muted);
-  font-size: 22px; cursor: pointer; padding: 4px 10px;
-}
-.modal-close:hover { color: #ef4444; }
-.modal-body { padding: 20px 22px; overflow-y: auto; }
+  div.innerHTML = `
+    <div class="card-img-box" title="Кликни, чтобы загрузить карточку">
+      <img style="display:none">
+      <span class="ph">${data.img ? '' : 'Кликни,<br>чтобы загрузить<br>карточку'}</span>
+    </div>
+    <div class="card-fields">
+      ${isSpell ? `
+        <select class="f-circle">
+          <option value="1">1 круг</option>
+          <option value="2">2 круг</option>
+          <option value="3">3 круг</option>
+          <option value="4">4 круг</option>
+          <option value="5">5 круг</option>
+        </select>
+      ` : ''}
+      <input type="text" class="f-name" placeholder="Название">
+      <input type="text" class="f-damage" placeholder="Урон (напр. 2д10 некро)" value="${data.damage || ''}">
+      <textarea class="f-desc" placeholder="Описание"></textarea>
+      <div class="bonus-block-slot"></div>
+      ${isSpell ? `<button class="slot-send-btn">→ Положить в ячейку</button>` : ''}
+    </div>
+    <button class="list-del" title="Удалить">✖</button>
+  `;
 
-/* COMBAT */
-.combat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.combat-list {
-  display: flex; flex-direction: column; gap: 10px;
-  max-height: 60vh; overflow-y: auto; padding-right: 6px;
-}
-.combat-item {
-  background: var(--panel-2); border: 1px solid var(--border);
-  border-left: 3px solid var(--green); border-radius: 8px;
-  padding: 10px 12px; cursor: pointer; transition: all 0.2s;
-}
-.combat-item:hover { border-color: var(--green); box-shadow: 0 0 10px var(--green-glow); }
-.combat-item.active { background: var(--green-dark); border-color: var(--green); }
-.combat-item-name { font-weight: 700; color: var(--green-bright); font-size: 14px; }
-.combat-item-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.combat-result {
-  background: #080b08; border: 1px solid var(--green-dark);
-  border-radius: 10px; padding: 18px; min-height: 200px;
-}
-.combat-result h3 { color: var(--green); font-size: 14px; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
-.combat-formula {
-  font-family: 'Courier New', monospace; font-size: 14px;
-  color: var(--text); line-height: 1.8; margin-bottom: 14px;
-}
-.combat-formula .mod { color: var(--gold); }
-.combat-formula .dice { color: var(--green-bright); }
-.combat-total {
-  font-size: 42px; font-weight: 800; color: var(--green-bright);
-  text-align: center; padding: 18px; text-shadow: 0 0 20px var(--green-glow);
-  border-top: 2px solid var(--green-dark); margin-top: 14px;
-}
-.combat-total small { display: block; font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 4px; }
-.combat-roll-btn {
-  width: 100%; padding: 14px; margin-top: 14px;
-  background: linear-gradient(180deg, #7f1d1d, #450a0a);
-  border: 1px solid #dc2626; color: #fecaca;
-  border-radius: 8px; font-family: inherit; font-size: 15px;
-  font-weight: 700; cursor: pointer; letter-spacing: 2px; transition: all 0.2s;
-}
-.combat-roll-btn:hover {
-  border-color: #ef4444; color: #fff;
-  box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
-}
-.combat-empty { color: var(--muted); text-align: center; padding: 40px 20px; font-style: italic; }
+  const imgBox = div.querySelector('.card-img-box');
+  const img = imgBox.querySelector('img');
+  const ph = imgBox.querySelector('.ph');
+  const nameInput = div.querySelector('.f-name');
+  const damageInput = div.querySelector('.f-damage');
+  const descInput = div.querySelector('.f-desc');
 
-/* FOOTER & TOAST */
-.footer {
-  text-align: center; margin-top: 40px; padding: 20px;
-  color: var(--muted); font-size: 12px; letter-spacing: 1px;
-  border-top: 1px solid var(--border);
-}
-.toast {
-  position: fixed; bottom: 30px; right: 30px;
-  background: linear-gradient(180deg, #14532d, #0f3d20);
-  border: 1px solid var(--green); color: var(--green-bright);
-  padding: 12px 20px; border-radius: 8px; font-weight: 600;
-  font-size: 14px; box-shadow: 0 0 20px var(--green-glow);
-  opacity: 0; transform: translateY(20px);
-  transition: all 0.3s ease; pointer-events: none; z-index: 1000;
-}
-.toast.show { opacity: 1; transform: translateY(0); }
+  if (isSpell && data.circle) div.querySelector('.f-circle').value = data.circle;
+  if (data.name) nameInput.value = data.name;
+  if (data.desc) descInput.value = data.desc;
+  if (data.img) { img.src = data.img; img.style.display = 'block'; if (ph) ph.style.display = 'none'; }
 
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--green-dark); border-radius: 5px; }
-::-webkit-scrollbar-thumb:hover { background: var(--green); }
+  // бонусы
+  const bonusBlock = createBonusBlock(data.bonuses || []);
+  div.querySelector('.bonus-block-slot').appendChild(bonusBlock);
 
-@media (max-width: 900px) {
-  .grid { grid-template-columns: 1fr; }
-  .skill-columns { grid-template-columns: 1fr; }
-  .list-card { grid-template-columns: 1fr; }
-  .bag-item { grid-template-columns: 1fr; }
-  .combat-grid { grid-template-columns: 1fr; }
+  // загрузка картинки
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'image/*';
+  fileInput.style.display = 'none';
+  div.appendChild(fileInput);
+  imgBox.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      img.src = ev.target.result;
+      img.style.display = 'block';
+      if (ph) ph.style.display = 'none';
+      autoSave();
+    };
+    reader.readAsDataURL(f);
+  });
+
+  // кнопка "положить в ячейку"
+  if (isSpell) {
+    div.querySelector('.slot-send-btn').onclick = e => {
+      e.preventDefault();
+      openSendToSlotDialog(div);
+    };
+  }
+
+  div.querySelector('.list-del').onclick = () => { div.remove(); autoSave(); recalcAll(); };
+  div.querySelectorAll('input, textarea, select').forEach(el => el.addEventListener('input', autoSave));
+
+  return div;
 }
+
+/* ---- Диалог "положить заклинание в ячейку" ---- */
+function openSendToSlotDialog(spellCard) {
+  const img = spellCard.querySelector('img');
+  const src = img && img.src && img.src.startsWith('data:') ? img.src : '';
+  if (!src) { toast('Сначала загрузи карточку'); return; }
+
+  const circle = prompt('Круг (1-5)?');
+  if (!circle || !SLOTS_CONFIG[circle]) { toast('Неверный круг'); return; }
+  const idx = prompt(`Номер ячейки (1-${SLOTS_CONFIG[circle]})?`);
+  if (!idx || idx < 1 || idx > SLOTS_CONFIG[circle]) { toast('Неверный номер'); return; }
+
+  const slotId = `${circle}-${idx}`;
+  const slot = document.querySelector(`[data-slot-id="${slotId}"]`);
+  if (!slot) { toast('Ячейка не найдена'); return; }
+
+  const slotImg = slot.querySelector('img');
+  const ph = slot.querySelector('.ph');
+  const clear = slot.querySelector('.slot-clear');
+  slotImg.src = src;
+  slotImg.style.display = 'block';
+  if (ph) ph.style.display = 'none';
+  clear.style.display = 'block';
+  slot.classList.remove('used');
+  autoSave();
+  toast(`→ В ячейку ${circle}-${idx}`);
+}
+
+/* ============================================================
+   ПОДКЛАССЫ
+   ============================================================ */
+function createSubclass(data = {}) {
+  const div = document.createElement('div');
+  div.className = 'subclass';
+  div.innerHTML = `
+    <div class="subclass-head">
+      <button class="subclass-toggle">▸</button>
+      <input type="text" class="sc-name" placeholder="Название подкласса">
+    </div>
+    <div class="subclass-body">
+      <textarea class="sc-desc" rows="3" placeholder="Описание"></textarea>
+      <div class="bonus-block-slot"></div>
+    </div>
+  `;
+  const toggle = div.querySelector('.subclass-toggle');
+  const head = div.querySelector('.subclass-head');
+  const doToggle = () => {
+    div.classList.toggle('open');
+    toggle.textContent = div.classList.contains('open') ? '▾' : '▸';
+  };
+  toggle.onclick = e => { e.stopPropagation(); doToggle(); };
+  head.addEventListener('click', e => { if (e.target.tagName === 'INPUT') return; doToggle(); });
+
+  if (data.name) div.querySelector('.sc-name').value = data.name;
+  if (data.desc) div.querySelector('.sc-desc').value = data.desc;
+
+  const bonusBlock = createBonusBlock(data.bonuses || []);
+  div.querySelector('.bonus-block-slot').appendChild(bonusBlock);
+
+  div.querySelectorAll('input, textarea').forEach(el => el.addEventListener('input', autoSave));
+  return div;
+}
+
+/* ============================================================
+   СУМКИ
+   ============================================================ */
+function createBag(data = {}) {
+  const div = document.createElement('div');
+  div.className = 'bag';
+  div.innerHTML = `
+    <div class="bag-header">
+      <input type="text" class="bag-name" placeholder="Название сумки">
+      <span class="bag-info">Ячеек: <b class="bag-count">0</b> · Вес: <b class="bag-weight">0</b></span>
+      <button class="btn btn-danger bag-del" style="padding:6px 10px">✖</button>
+    </div>
+    <div class="bag-items"></div>
+    <button class="btn btn-add bag-add">+ Добавить предмет</button>
+  `;
+  const itemsBox = div.querySelector('.bag-items');
+
+  function addItem(item = {}) {
+    const row = document.createElement('div');
+    row.className = 'bag-item';
+    row.innerHTML = `
+      <input type="number" class="i-num" placeholder="#" value="${item.num || ''}">
+      <input type="text" class="i-name" placeholder="Предмет" value="${item.name || ''}">
+      <input type="text" class="i-desc" placeholder="Описание" value="${item.desc || ''}">
+      <input type="number" class="i-qty" placeholder="Кол-во" value="${item.qty || ''}">
+      <input type="number" step="0.1" class="i-weight" placeholder="Вес" value="${item.weight || ''}">
+      <button class="item-del">✖</button>
+    `;
+    row.querySelector('.item-del').onclick = () => { row.remove(); updateBagStats(); autoSave(); };
+    row.querySelectorAll('input').forEach(el => el.addEventListener('input', () => { updateBagStats(); autoSave(); }));
+    itemsBox.appendChild(row);
+  }
+
+  function updateBagStats() {
+    const rows = itemsBox.querySelectorAll('.bag-item');
+    let totalWeight = 0;
+    rows.forEach(r => {
+      const w = parseFloat(r.querySelector('.i-weight').value) || 0;
+      const q = parseFloat(r.querySelector('.i-qty').value) || 1;
+      totalWeight += w * q;
+    });
+    div.querySelector('.bag-count').textContent = rows.length;
+    div.querySelector('.bag-weight').textContent = totalWeight.toFixed(2);
+    updateTotalWeight();
+  }
+
+  if (data.name) div.querySelector('.bag-name').value = data.name;
+  (data.items || []).forEach(addItem);
+
+  div.querySelector('.bag-add').onclick = () => { addItem(); autoSave(); };
+  div.querySelector('.bag-del').onclick = () => { div.remove(); updateTotalWeight(); autoSave(); };
+  div.querySelector('.bag-name').addEventListener('input', autoSave);
+
+  div._updateStats = updateBagStats;
+  updateBagStats();
+  return div;
+}
+
+function updateTotalWeight() {
+  let total = 0;
+  $$('.bag').forEach(bag => {
+    total += parseFloat(bag.querySelector('.bag-weight').textContent) || 0;
+  });
+  const el = $('#totalWeight');
+  if (el) el.textContent = total.toFixed(2);
+}
+
+/* ============================================================
+   ЯЧЕЙКИ ЗАКЛИНАНИЙ
+   ============================================================ */
+function renderSlots() {
+  const box = $('#slotsContainer');
+  box.innerHTML = '';
+
+  // ФОКУС (2 ячейки)
+  const focusBlock = document.createElement('div');
+  focusBlock.className = 'circle-block';
+  focusBlock.innerHTML = `
+    <div class="circle-title">Фокус — ${FOCUS_SLOTS} ячейки (без отката)</div>
+    <div class="slots-strip-wrap">
+      <button class="arrow arrow-left">‹</button>
+      <div class="slots-strip"></div>
+      <button class="arrow arrow-right">›</button>
+    </div>
+  `;
+  const focusStrip = focusBlock.querySelector('.slots-strip');
+  for (let i = 1; i <= FOCUS_SLOTS; i++) {
+    focusStrip.appendChild(createSlotEl(`focus-${i}`, i, false));
+  }
+  focusBlock.querySelector('.arrow-left').onclick = () => focusStrip.scrollBy({ left: -470, behavior: 'smooth' });
+  focusBlock.querySelector('.arrow-right').onclick = () => focusStrip.scrollBy({ left: 470, behavior: 'smooth' });
+  box.appendChild(focusBlock);
+
+  // КРУГИ 1-5
+  Object.entries(SLOTS_CONFIG).forEach(([circle, count]) => {
+    const block = document.createElement('div');
+    block.className = 'circle-block';
+    block.innerHTML = `
+      <div class="circle-title">${circle} круг — ${count} ячеек</div>
+      <div class="slots-strip-wrap">
+        <button class="arrow arrow-left">‹</button>
+        <div class="slots-strip"></div>
+        <button class="arrow arrow-right">›</button>
+      </div>
+    `;
+    const strip = block.querySelector('.slots-strip');
+    for (let i = 1; i <= count; i++) {
+      strip.appendChild(createSlotEl(`${circle}-${i}`, i, true));
+    }
+    block.querySelector('.arrow-left').onclick = () => strip.scrollBy({ left: -470, behavior: 'smooth' });
+    block.querySelector('.arrow-right').onclick = () => strip.scrollBy({ left: 470, behavior: 'smooth' });
+    box.appendChild(block);
+  });
+}
+
+function createSlotEl(slotId, num, canUse) {
+  const slot = document.createElement('div');
+  slot.className = 'slot';
+  slot.dataset.slotId = slotId;
+  slot.dataset.canUse = canUse ? '1' : '0';
+  slot.innerHTML = `
+    <span class="slot-num">${num}</span>
+    <div class="slot-img-box">
+      <img style="display:none">
+      <span class="ph">Пусто</span>
+    </div>
+    <button class="slot-clear" style="display:none">✖</button>
+    <div class="slot-buttons" style="display:none">
+      <button class="slot-btn roll">🎲 Бросок</button>
+      ${canUse ? `<button class="slot-btn use">✓ Использовать</button>` : ''}
+    </div>
+  `;
+
+  const imgBox = slot.querySelector('.slot-img-box');
+  const img = slot.querySelector('img');
+  const ph = slot.querySelector('.ph');
+  const clear = slot.querySelector('.slot-clear');
+  const buttons = slot.querySelector('.slot-buttons');
+  const useBtn = slot.querySelector('.slot-btn.use');
+  const rollBtn = slot.querySelector('.slot-btn.roll');
+
+  // загрузка картинки
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'image/*';
+  fileInput.style.display = 'none';
+  slot.appendChild(fileInput);
+  imgBox.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      img.src = ev.target.result;
+      img.style.display = 'block';
+      ph.style.display = 'none';
+      clear.style.display = 'block';
+      buttons.style.display = 'flex';
+      slot.classList.remove('used');
+      autoSave();
+    };
+    reader.readAsDataURL(f);
+  });
+
+  // очистить
+  clear.addEventListener('click', e => {
+    e.stopPropagation();
+    img.src = '';
+    img.style.display = 'none';
+    ph.style.display = 'block';
+    clear.style.display = 'none';
+    buttons.style.display = 'none';
+    slot.classList.remove('used');
+    autoSave();
+  });
+
+  // использовать / откат
+  if (useBtn) {
+    useBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      slot.classList.toggle('used');
+      if (slot.classList.contains('used')) {
+        useBtn.textContent = '↺ Откат';
+        toast('✓ Использовано');
+      } else {
+        useBtn.textContent = '✓ Использовать';
+        toast('↺ Откат');
+      }
+      autoSave();
+    });
+  }
+
+  // бросок
+  rollBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    quickRoll(slot);
+  });
+
+  return slot;
+}
+
+/* ============================================================
+   РАСЧЁТ БОНУСОВ
+   ============================================================ */
+function parseDice(str) {
+  // "+1д8" / "1d8" / "+2" / "1д4+1" / "-1"
+  if (!str) return null;
+  const clean = String(str).trim().replace(/д/g, 'd').replace(/\s/g, '');
+  // сумма простых форматов: 1d8, 2, +1
+  const parts = clean.split(/(?=[+-])/).filter(Boolean);
+  const result = { dice: [], flat: 0 };
+  for (let p of parts) {
+    if (!p) continue;
+    const sign = p.startsWith('-') ? -1 : 1;
+    const body = p.replace(/^[+-]/, '');
+    const m = body.match(/^(\d+)d(\d+)$/);
+    if (m) {
+      result.dice.push({ count: parseInt(m[1]) * sign, sides: parseInt(m[2]) });
+    } else {
+      const num = parseFloat(body);
+      if (!isNaN(num)) result.flat += num * sign;
+    }
+  }
+  return result;
+}
+
+function gatherBonuses() {
+  /* Собирает все бонусы со всех карточек + подклассов */
+  const all = [];
+  $$('.bonus-row').forEach(row => {
+    const target = row.querySelector('.bonus-target').value;
+    const value = row.querySelector('.bonus-value').value;
+    const condition = row.querySelector('.bonus-cond').value;
+    if (!value) return;
+    all.push({ target, value, condition });
+  });
+  return all;
+}
+
+function recalcAll() {
+  const bonuses = gatherBonuses();
+
+  // Характеристики
+  const bases = {
+    hp: parseFloat($('[data-key="hp"]')?.value) || 0,
+    defense: parseFloat($('[data-key="defense"]')?.value) || 0,
+    speed: parseFloat($('[data-key="speed"]')?.value) || 0
+  };
+
+  const totals = { hp: bases.hp, defense: bases.defense, speed: bases.speed };
+  const skillTotals = {};
+  ALL_SKILLS.forEach(s => skillTotals[s.key] = parseFloat($(`[data-skill="${s.key}"]`)?.value) || 0);
+
+  bonuses.forEach(b => {
+    if (['hp', 'defense', 'speed'].includes(b.target)) {
+      const p = parseDice(b.value);
+      if (p) totals[b.target] += p.flat;
+    }
+    if (b.target.startsWith('skill_')) {
+      const key = b.target.replace('skill_', '');
+      const p = parseDice(b.value);
+      if (p) skillTotals[key] += p.flat;
+    }
+  });
+
+  // отображение
+  $$('[data-total]').forEach(el => {
+    const key = el.dataset.total;
+    if (totals[key] !== undefined) el.textContent = totals[key];
+  });
+  $$('[data-skill-total]').forEach(el => {
+    const key = el.dataset.skillTotal;
+    if (skillTotals[key] !== undefined) el.textContent = skillTotals[key];
+  });
+}
+
+/* ============================================================
+   ПОРОГИ ВЕРЫ
+   ============================================================ */
+function createFaithRow(data = {}) {
+  const div = document.createElement('div');
+  div.className = 'faith-row';
+  div.innerHTML = `
+    <input type="text" class="f-min" placeholder="Вера от -30" value="${data.min || ''}">
+    <input type="text" class="f-dice" placeholder="+1д4" value="${data.dice || ''}">
+    <button class="bonus-del">✖</button>
+  `;
+  div.querySelector('.bonus-del').onclick = () => { div.remove(); autoSave(); recalcAll(); };
+  div.querySelectorAll('input').forEach(el => el.addEventListener('input', autoSave));
+  return div;
+}
+
+function renderFaithThresholds(initial) {
+  const box = $('#faithThresholds');
+  box.innerHTML = '';
+  (initial || DEFAULT_FAITH).forEach(t => box.appendChild(createFaithRow(t)));
+}
+
+function getFaithBonus(faith) {
+  /* Возвращает бонус к некро урону от веры */
+  const rows = $$('#faithThresholds .faith-row').map(r => ({
+    min: parseFloat(r.querySelector('.f-min').value) || 0,
+    dice: r.querySelector('.f-dice').value
+  })).sort((a, b) => b.min - a.min); // сортировка от большего к меньшему
+
+  // ищем первое совпадение: faith >= min
+  for (const r of rows) {
+    if (faith >= r.min) return r.dice;
+  }
+  return '';
+}
+
+/* ============================================================
+   БРОСОК КУБИКОВ
+   ============================================================ */
+function rollDice(count, sides) {
+  let total = 0;
+  const rolls = [];
+  for (let i = 0; i < count; i++) {
+    const r = Math.floor(Math.random() * sides) + 1;
+    rolls.push(r);
+    total += r;
+  }
+  return { total, rolls };
+}
+
+function quickRoll(slot) {
+  const toastMsg = prompt('Бросок — введи формулу (напр. 2д10)');
+  if (!toastMsg) return;
+  const p = parseDice(toastMsg);
+  if (!p) { toast('Не понял формулу'); return; }
+  let total = p.flat;
+  let allRolls = [];
+  p.dice.forEach(d => {
+    const r = rollDice(Math.abs(d.count), d.sides);
+    total += r.total * Math.sign(d.count);
+    allRolls.push(`${d.count}д${d.sides}: [${r.rolls.join(', ')}]`);
+  });
+  alert(`🎲 ${toastMsg}\n\n${allRolls.join('\n')}\n\nИтог: ${total}`);
+}
+
+/* ============================================================
+   БОЕВОЙ РЕЖИМ
+   ============================================================ */
+function openCombat() {
+  const modal = $('#combatModal');
+  modal.classList.add('open');
+
+  const body = $('#combatBody');
+  body.innerHTML = `
+    <div class="combat-grid">
+      <div>
+        <h3 style="color:var(--green);margin-bottom:12px;text-transform:uppercase;letter-spacing:1.5px;font-size:14px">Твои атаки</h3>
+        <div class="combat-list" id="combatList"></div>
+      </div>
+      <div>
+        <div class="combat-result" id="combatResult">
+          <div class="combat-empty">Выбери атаку слева</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const list = $('#combatList');
+  const items = [];
+
+  // заклинания из ячеек (есть картинка)
+  $$('.slot').forEach(slot => {
+    const img = slot.querySelector('img');
+    if (img && img.src && img.src.startsWith('data:')) {
+      const slotId = slot.dataset.slotId;
+      items.push({
+        type: 'spell',
+        slotId,
+        img: img.src,
+        name: `Ячейка ${slotId}`,
+        damage: '' // урона нет, спросим вручную? лучше из связанного заклинания
+      });
+    }
+  });
+
+  // атаки из снаряжения (у которых указан урон)
+  $$('#equipList .list-card').forEach(card => {
+    const dmg = card.querySelector('.f-damage')?.value;
+    const name = card.querySelector('.f-name')?.value;
+    if (dmg) {
+      items.push({
+        type: 'equip',
+        name: name || 'Снаряжение',
+        damage: dmg
+      });
+    }
+  });
+
+  if (!items.length) {
+    list.innerHTML = `<div class="combat-empty">Нет заклинаний в ячейках<br>и нет снаряжения с уроном</div>`;
+    return;
+  }
+
+  items.forEach((it, i) => {
+    const div = document.createElement('div');
+    div.className = 'combat-item';
+    div.innerHTML = `
+      <div class="combat-item-name">${it.type === 'spell' ? '🔮 ' : '⚔ '}${it.name}</div>
+      <div class="combat-item-sub">${it.damage || '— урон не указан —'}</div>
+    `;
+    div.onclick = () => {
+      $$('.combat-item').forEach(x => x.classList.remove('active'));
+      div.classList.add('active');
+      selectCombatItem(it);
+    };
+    list.appendChild(div);
+  });
+}
+
+function selectCombatItem(item) {
+  const result = $('#combatResult');
+  // базовая формула урона
+  let damageFormula = item.damage;
+  if (!damageFormula) {
+    damageFormula = prompt('Укажи урон (напр. 2д10 некро)') || '';
+    if (!damageFormula) { result.innerHTML = `<div class="combat-empty">Урон не указан</div>`; return; }
+    item.damage = damageFormula;
+  }
+
+  // определяем тип урона из строки
+  const dmgType = detectDamageType(damageFormula);
+
+  // собираем модификаторы
+  const bonuses = gatherBonuses();
+  const mods = [];
+
+  bonuses.forEach(b => {
+    // бонусы к урону
+    if (b.target === 'dmg_all') mods.push({ name: 'Бонус', value: b.value });
+    if (b.target === 'dmg_necro' && dmgType === 'necro') mods.push({ name: 'Бонус (некро)', value: b.value });
+    if (b.target === 'dmg_fire' && dmgType === 'fire') mods.push({ name: 'Бонус (огонь)', value: b.value });
+    if (b.target === 'dmg_cold' && dmgType === 'cold') mods.push({ name: 'Бонус (холод)', value: b.value });
+    if (b.target === 'dmg_phys' && dmgType === 'phys') mods.push({ name: 'Бонус (физ)', value: b.value });
+    // условия из поля condition (например "только некро")
+    if (b.condition && b.condition !== 'all') {
+      if (b.condition === dmgType) mods.push({ name: 'Бонус (условие)', value: b.value });
+    }
+  });
+
+  // вера
+  if (dmgType === 'necro') {
+    const faith = parseFloat($('[data-key="faith"]')?.value) || 0;
+    const faithBonus = getFaithBonus(faith);
+    if (faithBonus) mods.push({ name: 'Вера (некро)', value: faithBonus });
+  }
+
+  // рендер
+  const baseDice = parseDice(damageFormula);
+  let formulaText = `<span class="dice">${damageFormula}</span>`;
+  mods.forEach(m => formulaText += ` + <span class="mod">${m.value} (${m.name})</span>`);
+
+  result.innerHTML = `
+    <h3>${item.name}</h3>
+    <div class="combat-formula">${formulaText}</div>
+    <div class="combat-total" id="combatTotal">
+      0
+      <small>нажми кнопку, чтобы бросить</small>
+    </div>
+    <button class="combat-roll-btn" id="combatRollBtn">🎲 БРОСИТЬ</button>
+  `;
+
+  $('#combatRollBtn').onclick = () => {
+    let total = 0;
+    let details = [];
+
+    // бросок базового урона
+    if (baseDice) {
+      baseDice.dice.forEach(d => {
+        const r = rollDice(Math.abs(d.count), d.sides);
+        total += r.total * Math.sign(d.count);
+        details.push(`${d.count}д${d.sides} → [${r.rolls.join(', ')}] = ${r.total}`);
+      });
+      total += baseDice.flat;
+      if (baseDice.flat) details.push(`флэт: ${baseDice.flat > 0 ? '+' : ''}${baseDice.flat}`);
+    }
+
+    // модификаторы
+    mods.forEach(m => {
+      const p = parseDice(m.value);
+      if (!p) return;
+      p.dice.forEach(d => {
+        const r = rollDice(Math.abs(d.count), d.sides);
+        total += r.total * Math.sign(d.count);
+        details.push(`${m.name}: ${d.count}д${d.sides} → [${r.rolls.join(', ')}] = ${r.total}`);
+      });
+      if (p.flat) { total += p.flat; details.push(`${m.name}: ${p.flat > 0 ? '+' : ''}${p.flat}`); }
+    });
+
+    const totalEl = $('#combatTotal');
+    totalEl.innerHTML = `${total}<small>итого урона</small>`;
+    toast(`🎲 ${total} урона`);
+  };
+}
+
+function detectDamageType(str) {
+  const s = str.toLowerCase();
+  if (/некро/.test(s)) return 'necro';
+  if (/огон|огн/.test(s)) return 'fire';
+  if (/холод|лёд|лед/.test(s)) return 'cold';
+  if (/физ|удар|руб|кол|реза/.test(s)) return 'phys';
+  return 'all';
+}
+
+/* ============================================================
+   СБОР И ЗАГРУЗКА
+   ============================================================ */
+function collectData() {
+  const data = {
+    fields: {}, skills: {}, subclasses: [],
+    spells: [], effects: [], actives: [], passives: [], equip: [],
+    bags: [], slots: {}, faith: []
+  };
+  $$('[data-key]').forEach(el => data.fields[el.dataset.key] = el.value);
+  $$('[data-skill]').forEach(el => data.skills[el.dataset.skill] = el.value);
+
+  $$('#subclassList .subclass').forEach(sc => {
+    data.subclasses.push({
+      name: sc.querySelector('.sc-name').value,
+      desc: sc.querySelector('.sc-desc').value,
+      bonuses: collectBonuses(sc)
+    });
+  });
+
+  const collectList = (id, kind) => {
+    $$(`#${id} .list-card`).forEach(card => {
+      const img = card.querySelector('img');
+      data[kind].push({
+        circle: card.querySelector('.f-circle')?.value,
+        name: card.querySelector('.f-name').value,
+        damage: card.querySelector('.f-damage')?.value || '',
+        desc: card.querySelector('.f-desc').value,
+        img: img && img.src && img.src.startsWith('data:') ? img.src : '',
+        bonuses: collectBonuses(card)
+      });
+    });
+  };
+  collectList('spellContainer', 'spells');
+  collectList('effectList', 'effects');
+  collectList('activeList', 'actives');
+  collectList('passiveList', 'passives');
+  collectList('equipList', 'equip');
+
+  $$('#bagContainer .bag').forEach(bag => {
+    const items = [];
+    bag.querySelectorAll('.bag-item').forEach(r => {
+      items.push({
+        num: r.querySelector('.i-num').value,
+        name: r.querySelector('.i-name').value,
+        desc: r.querySelector('.i-desc').value,
+        qty: r.querySelector('.i-qty').value,
+        weight: r.querySelector('.i-weight').value
+      });
+    });
+    data.bags.push({ name: bag.querySelector('.bag-name').value, items });
+  });
+
+  $$('.slot').forEach(slot => {
+    const img = slot.querySelector('img');
+    if (img && img.src && img.src.startsWith('data:')) {
+      data.slots[slot.dataset.slotId] = img.src;
+    }
+  });
+
+  $$('#faithThresholds .faith-row').forEach(r => {
+    data.faith.push({
+      min: r.querySelector('.f-min').value,
+      dice: r.querySelector('.f-dice').value
+    });
+  });
+
+  return data;
+}
+
+function collectBonuses(container) {
+  const bonuses = [];
+  container.querySelectorAll('.bonus-row').forEach(row => {
+    bonuses.push({
+      target: row.querySelector('.bonus-target').value,
+      value: row.querySelector('.bonus-value').value,
+      condition: row.querySelector('.bonus-cond').value
+    });
+  });
+  return bonuses;
+}
+
+function applyData(d) {
+  if (!d) return;
+
+  if (d.fields) $$('[data-key]').forEach(el => {
+    if (d.fields[el.dataset.key] !== undefined) el.value = d.fields[el.dataset.key];
+  });
+  if (d.skills) $$('[data-skill]').forEach(el => {
+    if (d.skills[el.dataset.skill] !== undefined) el.value = d.skills[el.dataset.skill];
+  });
+
+  $('#subclassList').innerHTML = '';
+  (d.subclasses || []).forEach(sc => $('#subclassList').appendChild(createSubclass(sc)));
+
+  const fill = (id, kind, items) => {
+    $(`#${id}`).innerHTML = '';
+    (items || []).forEach(it => $(`#${id}`).appendChild(createListCard(kind, it)));
+  };
+  fill('spellContainer', 'spell', d.spells);
+  fill('effectList', 'effect', d.effects);
+  fill('activeList', 'active', d.actives);
+  fill('passiveList', 'passive', d.passives);
+  fill('equipList', 'equip', d.equip);
+
+  $('#bagContainer').innerHTML = '';
+  (d.bags || []).forEach(b => $('#bagContainer').appendChild(createBag(b)));
+
+  if (d.slots) {
+    Object.entries(d.slots).forEach(([slotId, src]) => {
+      const slot = document.querySelector(`[data-slot-id="${slotId}"]`);
+      if (slot) {
+        const img = slot.querySelector('img');
+        const ph = slot.querySelector('.ph');
+        const clear = slot.querySelector('.slot-clear');
+        const buttons = slot.querySelector('.slot-buttons');
+        img.src = src;
+        img.style.display = 'block';
+        if (ph) ph.style.display = 'none';
+        clear.style.display = 'block';
+        if (buttons) buttons.style.display = 'flex';
+      }
+    });
+  }
+
+  renderFaithThresholds(d.faith);
+
+  updateTotalWeight();
+  recalcAll();
+}
+
+/* ============================================================
+   СОХРАНЕНИЕ
+   ============================================================ */
+let saveTimer = null;
+function autoSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(collectData()));
+  }, 400);
+}
+function saveNow() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(collectData()));
+  toast('💾 Сохранено');
+}
+function loadFromStorage() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) { try { applyData(JSON.parse(raw)); } catch (e) { console.warn(e); } }
+}
+
+/* ЭКСПОРТ / ИМПОРТ */
+function exportJSON() {
+  const data = collectData();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const name = (data.fields.name || 'character').replace(/\s+/g, '_');
+  a.href = url;
+  a.download = `${name}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('⬇ Экспортировано');
+}
+function importJSON(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      applyData(JSON.parse(e.target.result));
+      saveNow();
+      toast('⬆ Импортировано');
+    } catch (err) { toast('✖ Ошибка файла'); }
+  };
+  reader.readAsText(file);
+}
+
+/* СБРОС */
+function resetAll() {
+  if (!confirm('Удалить все данные персонажа?')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  $$('[data-key], [data-skill]').forEach(el => el.value = '');
+  ['subclassList','spellContainer','effectList','activeList','passiveList','bagContainer','equipList','faithThresholds'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.innerHTML = '';
+  });
+  renderSlots();
+  renderFaithThresholds();
+  updateTotalWeight();
+  recalcAll();
+  toast('✖ Сброшено');
+}
+
+/* TOGGLES */
+function initToggles() {
+  $$('.btn-toggle').forEach(btn => {
+    btn.onclick = () => {
+      const target = document.getElementById(btn.dataset.target);
+      if (!target) return;
+      target.classList.toggle('collapsed');
+      btn.textContent = target.classList.contains('collapsed') ? '▸ Показать' : '▾ Скрыть';
+    };
+  });
+}
+
+/* INIT */
+function init() {
+  renderSkills();
+  renderSlots();
+  renderFaithThresholds();
+  loadFromStorage();
+
+  document.addEventListener('input', () => { autoSave(); recalcAll(); });
+  document.addEventListener('change', () => { autoSave(); recalcAll(); });
+
+  $('#saveBtn').onclick   = saveNow;
+  $('#exportBtn').onclick = exportJSON;
+  $('#importBtn').onclick = () => $('#importFile').click();
+  $('#resetBtn').onclick  = resetAll;
+  $('#importFile').onchange = e => {
+    if (e.target.files[0]) importJSON(e.target.files[0]);
+    e.target.value = '';
+  };
+
+  $('#combatBtn').onclick = openCombat;
+  $('#closeCombatBtn').onclick = () => $('#combatModal').classList.remove('open');
+
+  $('#addSubclassBtn').onclick = () => { $('#subclassList').appendChild(createSubclass()); autoSave(); };
+  $('#addSpellBtn').onclick    = () => { $('#spellContainer').appendChild(createListCard('spell')); autoSave(); };
+  $('#addEffectBtn').onclick   = () => { $('#effectList').appendChild(createListCard('effect')); autoSave(); };
+  $('#addActiveBtn').onclick   = () => { $('#activeList').appendChild(createListCard('active')); autoSave(); };
+  $('#addPassiveBtn').onclick  = () => { $('#passiveList').appendChild(createListCard('passive')); autoSave(); };
+  $('#addBagBtn').onclick      = () => { $('#bagContainer').appendChild(createBag()); autoSave(); };
+  $('#addEquipBtn').onclick    = () => { $('#equipList').appendChild(createListCard('equip')); autoSave(); };
+  $('#addFaithBtn').onclick    = () => { $('#faithThresholds').appendChild(createFaithRow()); autoSave(); };
+
+  initToggles();
+  toast('☠ Лист персонажа загружен');
+}
+
+document.addEventListener('DOMContentLoaded', init);
