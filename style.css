@@ -105,6 +105,7 @@ body {
   border: 1px solid var(--border); border-radius: 12px;
   padding: 18px 20px; box-shadow: var(--shadow);
   position: relative; overflow: hidden;
+  min-height: 0;
 }
 .card::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
@@ -208,11 +209,18 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
 }
 .skill-total:hover { background: rgba(74, 222, 128, 0.1); }
 
-/* SCROLL BOX (для подклассов) */
+/* ============================================================
+   SCROLL BOX — фикс для подклассов и других списков
+   ============================================================ */
 .scroll-box {
   max-height: 420px;
+  min-height: 200px;
   overflow-y: auto;
-  padding-right: 6px;
+  overflow-x: hidden;
+  padding: 8px;
+  background: #0a0f0a;
+  border: 1px solid var(--border);
+  border-radius: 8px;
 }
 .scroll-box::-webkit-scrollbar { width: 8px; }
 .scroll-box::-webkit-scrollbar-track { background: #0a0d0a; border-radius: 4px; }
