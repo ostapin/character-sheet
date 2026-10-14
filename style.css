@@ -91,13 +91,17 @@ body {
 }
 .btn-toggle:hover { color: var(--green); border-color: var(--green); }
 
-/* GRID */
+/* ============================================================
+   GRID — теперь карточки НЕ растягиваются друг под друга
+   ============================================================ */
 .grid {
   max-width: 1500px; margin: 24px auto; padding: 0 24px;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  align-items: start;   /* ← ключевое: карточки не растягиваются */
 }
 .card-wide { grid-column: 1 / -1; }
-.card-half { display: contents; }
+.card-half { display: block; align-self: start; }
 
 /* CARD */
 .card {
@@ -105,7 +109,7 @@ body {
   border: 1px solid var(--border); border-radius: 12px;
   padding: 18px 20px; box-shadow: var(--shadow);
   position: relative; overflow: hidden;
-  min-height: 0;
+  align-self: start;
 }
 .card::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
@@ -148,7 +152,7 @@ body {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px;
 }
 .field { display: flex; flex-direction: column; gap: 5px; }
-.field label, .stat label, .bonus-field label {
+.field label, .stat label {
   font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
   color: var(--muted); font-weight: 600;
 }
@@ -163,7 +167,7 @@ input:focus, textarea:focus, select:focus {
 }
 input::placeholder, textarea::placeholder { color: #3f4f3f; }
 
-/* STATS */
+/* STATS — теперь компактно, 2 колонки */
 .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
 .stat-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .stat {
@@ -210,7 +214,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
 .skill-total:hover { background: rgba(74, 222, 128, 0.1); }
 
 /* ============================================================
-   SCROLL BOX — фиксированная высота, ~4 подкласса
+   SCROLL BOX — фикс высоты, ~4 подкласса
    ============================================================ */
 .scroll-box {
   height: 290px;
