@@ -210,11 +210,11 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
 .skill-total:hover { background: rgba(74, 222, 128, 0.1); }
 
 /* ============================================================
-   SCROLL BOX — фикс для подклассов и других списков
+   SCROLL BOX — фиксированная высота, ~4 подкласса
    ============================================================ */
 .scroll-box {
-  max-height: 420px;
-  min-height: 200px;
+  height: 290px;
+  max-height: 290px;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 8px;
@@ -279,6 +279,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   border-left: 3px solid var(--green); border-radius: 8px;
   padding: 10px 12px; margin-bottom: 10px;
 }
+.subclass:last-child { margin-bottom: 0; }
 .subclass-head { display: flex; align-items: center; gap: 10px; cursor: pointer; }
 .subclass-head input {
   flex: 1; font-weight: 700; color: var(--green-bright); cursor: pointer;
