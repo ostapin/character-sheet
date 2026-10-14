@@ -91,17 +91,13 @@ body {
 }
 .btn-toggle:hover { color: var(--green); border-color: var(--green); }
 
-/* ============================================================
-   GRID — теперь карточки НЕ растягиваются друг под друга
-   ============================================================ */
+/* GRID */
 .grid {
   max-width: 1500px; margin: 24px auto; padding: 0 24px;
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 18px;
-  align-items: start;   /* ← ключевое: карточки не растягиваются */
+  display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
 }
 .card-wide { grid-column: 1 / -1; }
-.card-half { display: block; align-self: start; }
+.card-half { display: contents; }
 
 /* CARD */
 .card {
@@ -109,7 +105,7 @@ body {
   border: 1px solid var(--border); border-radius: 12px;
   padding: 18px 20px; box-shadow: var(--shadow);
   position: relative; overflow: hidden;
-  align-self: start;
+  min-height: 0;
 }
 .card::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
@@ -167,7 +163,7 @@ input:focus, textarea:focus, select:focus {
 }
 input::placeholder, textarea::placeholder { color: #3f4f3f; }
 
-/* STATS — теперь компактно, 2 колонки */
+/* STATS */
 .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
 .stat-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .stat {
@@ -213,12 +209,10 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
 }
 .skill-total:hover { background: rgba(74, 222, 128, 0.1); }
 
-/* ============================================================
-   SCROLL BOX — фикс высоты, ~4 подкласса
-   ============================================================ */
+/* SCROLL BOX — 200px, чтобы совпадало с характеристиками */
 .scroll-box {
-  height: 290px;
-  max-height: 290px;
+  height: 200px;
+  max-height: 200px;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 8px;
