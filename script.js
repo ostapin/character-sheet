@@ -1169,6 +1169,7 @@ function initTree() {
   nodesBox.innerHTML = '';
   svg.innerHTML = '';
 
+  // 1. Отрисовка узлов (ТОЛЬКО НАЗВАНИЕ, ТИП И ПРАВИЛЬНАЯ ЦЕНА)
   TREE_NODES.forEach(node => {
     const div = document.createElement('div');
     div.className = `tree-node ${node.type}`;
@@ -1177,20 +1178,22 @@ function initTree() {
     
     div.innerHTML = `
       <div class="node-title">${node.name}</div>
-      <div class="node-type">${node.type === 'class' ? 'Класс' : node.type === 'subclass' ? 'Подкласс' : node.type === 'sub-subclass' ? 'Ветвь' : node.type === 'token' ? 'Токен' : 'Навык'}</div>
+      <div class="node-type">${node.type === 'class' ? 'Класс' : 'Подкласс'}</div>
       <div class="node-cost" style="font-size:10px;">Свой: ${node.cost}</div>
-      <div class="node-cost" style="font-size:10px; color:#a855f7;">Мульти: ${node.multi}</div>
+      ${node.multi !== '-' ? `<div class="node-cost" style="font-size:10px; color:#a855f7;">Мульти: ${node.multi}</div>` : ''}
     `;
     div.onclick = (e) => { e.stopPropagation(); showTreeNodeInfo(node); };
     nodesBox.appendChild(div);
   });
 
+  // 2. Отрисовка линий (Безье)
   TREE_NODES.forEach(node => {
     if (!node.parent) return;
     const parent = TREE_NODES.find(n => n.id === node.parent);
     if (!parent) return;
     
-    const x1 = parent.x + 100, y1 = parent.y + 90;
+    // Центры карточек (примерно 100px вправо, 70px вниз)
+    const x1 = parent.x + 100, y1 = parent.y + 70;
     const x2 = node.x + 100, y2 = node.y;
     
     const d = `M ${x1} ${y1} C ${x1} ${(y1+y2)/2}, ${x2} ${(y1+y2)/2}, ${x2} ${y2}`;
@@ -1203,48 +1206,90 @@ function initTree() {
     svg.appendChild(path);
   });
 
-  const wrapper = $('#treeWrapper');
-  
-  wrapper.addEventListener('mousedown', (e) => {
-    if (e.button !== 0) return;
-    isDragging = true;
-    startX = e.pageX;
-    startY = e.pageY;
-    scrollLeft = wrapper.scrollLeft;
-    scrollTop = wrapper.scrollTop;
-    wrapper.style.cursor = 'grabbing';
-    e.preventDefault();
-  });
+  // 3. Отрисовка таблиц внизу
+  renderTreeTables();
 
+  // 4. Движение
+  const wrapper = $('#treeWrapper');
+  wrapper.addEventListener('mousedown', (e) => { 
+    if (e.button !== 0) return; 
+    isDragging = true; startX = e.pageX; startY = e.pageY; 
+    scrollLeft = wrapper.scrollLeft; scrollTop = wrapper.scrollTop; 
+    wrapper.style.cursor = 'grabbing'; e.preventDefault(); 
+  });
   wrapper.addEventListener('mouseleave', () => { isDragging = false; wrapper.style.cursor = 'grab'; });
   wrapper.addEventListener('mouseup', () => { isDragging = false; wrapper.style.cursor = 'grab'; });
-  
-  wrapper.addEventListener('mousemove', (e) => {
-    if (!isDragging) return;
-    e.preventDefault();
-    const walkX = e.pageX - startX;
-    const walkY = e.pageY - startY;
-    wrapper.scrollLeft = scrollLeft - walkX;
-    wrapper.scrollTop = scrollTop - walkY;
+  wrapper.addEventListener('mousemove', (e) => { 
+    if (!isDragging) return; e.preventDefault(); 
+    const walkX = e.pageX - startX; const walkY = e.pageY - startY; 
+    wrapper.scrollLeft = scrollLeft - walkX; wrapper.scrollTop = scrollTop - walkY; 
   });
 
+  // 5. Зум
   $('#zoomIn').onclick = () => { treeScale += 0.1; canvas.style.transform = `scale(${treeScale})`; };
   $('#zoomOut').onclick = () => { treeScale = Math.max(0.3, treeScale - 0.1); canvas.style.transform = `scale(${treeScale})`; };
   $('#zoomReset').onclick = () => { treeScale = 1; canvas.style.transform = `scale(${treeScale})`; };
+}
+
+function renderTreeTables() {
+  let tablesBox = document.getElementById('treeTables');
+  if (!tablesBox) {
+    tablesBox = document.createElement('div');
+    tablesBox.id = 'treeTables';
+    tablesBox.style.marginTop = '2500px'; // Отступ от дерева
+    tablesBox.style.padding = '20px';
+    tablesBox.style.maxWidth = '1200px';
+    tablesBox.style.margin = '2500px auto 50px auto';
+    document.getElementById('treeCanvas').appendChild(tablesBox);
+  }
+  tablesBox.innerHTML = '';
+
+  // 1. Таблица внеклассовых
+  let html = `<h2 style="color:var(--green); margin-bottom:10px; font-size:18px;">Внеклассовые</h2><div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:30px;">`;
+  TABLE_DATA.extra.forEach(item => {
+    html += `<div class="tree-node skill" style="position:relative; width:auto; left:0; top:0;">
+      <div class="node-title">${item.name}</div>
+      <div class="node-type">Навык</div>
+      <div class="node-cost" style="color:var(--gold); font-size:10px; margin-top:5px;">Цена: ${item.cost}</div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  // 2. Таблица токенов
+  html += `<h2 style="color:var(--green); margin-bottom:10px; font-size:18px;">Токены</h2><div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:30px;">`;
+  TABLE_DATA.tokens.forEach(item => {
+    html += `<div class="tree-node token" style="position:relative; width:auto; left:0; top:0;">
+      <div class="node-title">${item.name}</div>
+      <div class="node-type">Токен</div>
+      <div class="node-cost" style="color:var(--gold); font-size:10px; margin-top:5px;">Цена: ${item.cost}</div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  // 3. Таблица фокусов
+  html += `<h2 style="color:var(--green); margin-bottom:10px; font-size:18px;">Фокусы</h2><div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:30px;">`;
+  TABLE_DATA.focuses.forEach(item => {
+    html += `<div class="tree-node skill" style="position:relative; width:auto; left:0; top:0;">
+      <div class="node-title">${item.name}</div>
+      <div class="node-type">${item.lvl}</div>
+      <div class="node-cost" style="color:var(--gold); font-size:10px; margin-top:5px;">${item.desc}</div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  tablesBox.innerHTML = html;
 }
 
 function showTreeNodeInfo(node) {
   $('#treeNodeTitle').textContent = node.name;
   let typeName = 'Навык';
   if (node.type === 'class') typeName = 'Класс';
-  if (node.type === 'subclass') typeName = 'Подкласс';
-  if (node.type === 'sub-subclass') typeName = 'Ветвь развития';
-  if (node.type === 'token') typeName = 'Токен';
-  
+  if (node.type === 'subclass' || node.type === 'sub-subclass' || node.type === 'skill') typeName = 'Подкласс';
+
   $('#treeNodeBody').innerHTML = `
     <div style="color:var(--green); font-weight:700; margin-bottom:10px; text-transform:uppercase; font-size:12px;">${typeName}</div>
     <div style="color:var(--gold); font-weight:800; font-size:16px; margin-bottom:8px;">Свой: ${node.cost}</div>
-    <div style="color:#a855f7; font-weight:800; font-size:16px; margin-bottom:16px;">Мульти: ${node.multi}</div>
+    ${node.multi !== '-' ? `<div style="color:#a855f7; font-weight:800; font-size:16px; margin-bottom:16px;">Мульти: ${node.multi}</div>` : '<br>'}
     <div style="background:#0a0f0a; padding:16px; border-radius:8px; border-left:3px solid var(--green); line-height:1.6; white-space:pre-wrap;">${node.desc || 'Описание отсутствует.'}</div>
   `;
   $('#treeNodeModal').classList.add('open');
