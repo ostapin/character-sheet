@@ -123,9 +123,7 @@ body {
 }
 .section-header h2 { border: none; margin: 0; padding: 0; }
 
-/* ============================================================
-   PANEL ПЕРСОНАЖА — фото не обрезается
-   ============================================================ */
+/* PANEL ПЕРСОНАЖА */
 .character-panel {
   display: grid !important;
   grid-template-columns: 340px 1fr;
@@ -627,7 +625,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
 .tree-canvas {
   position: absolute;
   top: 0; left: 0;
-  width: 4000px; height: 3000px;
+  width: 15000px; height: 4000px;
   transform-origin: 0 0;
 }
 .tree-lines {
@@ -637,7 +635,8 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
 }
 .tree-node {
   position: absolute;
-  width: 180px;
+  width: 200px;
+  min-height: 90px;
   background: var(--panel-2);
   border: 1px solid var(--border);
   border-left: 4px solid var(--green);
@@ -647,6 +646,8 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   transition: all 0.2s;
   z-index: 2;
   box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  user-select: none;
+  -webkit-user-select: none;
 }
 .tree-node:hover {
   border-color: var(--green);
@@ -656,8 +657,9 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
 .tree-node.class { border-left-color: var(--gold); background: #1a1f1a; }
 .tree-node.subclass { border-left-color: var(--green); }
 .tree-node.sub-subclass { border-left-color: #3b82f6; }
-.tree-node.skill { border-left-color: #a855f7; width: 140px; font-size: 12px; }
-.tree-node.token { border-left-color: var(--gold); width: 140px; font-size: 12px; background: #1a1f1a; }
+.tree-node.skill { border-left-color: #a855f7; }
+.tree-node.token { border-left-color: var(--gold); background: #1a1f1a; }
+
 .node-title { font-weight: 800; color: var(--green-bright); font-size: 14px; margin-bottom: 4px; }
 .node-type { font-size: 10px; text-transform: uppercase; color: var(--muted); letter-spacing: 1px; }
 .node-cost { font-size: 11px; color: var(--gold); margin-top: 4px; font-weight: 700; }
