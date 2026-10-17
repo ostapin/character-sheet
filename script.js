@@ -1198,7 +1198,12 @@ function init() {
   initBreakdownClicks();
   initToggles();
   initTabs();
-  
+  #inventoryView {
+  display: block;
+}
+#inventoryView.hidden {
+  display: none;
+}
   toast('☠ Лист персонажа загружен');
 }
 
