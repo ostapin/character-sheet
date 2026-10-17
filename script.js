@@ -1,8 +1,8 @@
 /* ============================================================
-   ЛИСТ ПЕРСОНАЖА — ЧИСТАЯ ВЕРСИЯ
+   ЛИСТ ПЕРСОНАЖА — вся логика v5 (с общим инвентарем)
    ============================================================ */
 
-const STORAGE_KEY = 'absolute_world_character_v4';
+const STORAGE_KEY = 'absolute_world_character_v5';
 const SLOTS_CONFIG = { 1: 8, 2: 7, 3: 6, 4: 5, 5: 4 };
 const FOCUS_SLOTS = 2;
 
@@ -285,7 +285,7 @@ function createSubclass(data = {}) {
 /* ============================================================
    СУМКИ (ИНВЕНТАРЬ)
    ============================================================ */
-function createBag(data = {}) {
+function createBag(data = {}, onUpdate = () => {}) {
   const div = document.createElement('div');
   div.className = 'bag';
   div.innerHTML = `
@@ -327,7 +327,7 @@ function createBag(data = {}) {
         <input type="text" class="s-desc" placeholder="Описание" value="${si.desc || ''}">
         <button class="sub-item-del">✖</button>
       `;
-      s.querySelector('.sub-item-del').onclick = () => { s.remove(); autoSave(); };
+      s.querySelector('.sub-item-del').onclick = () => { s.remove(); autoSave(); onUpdate(); };
       s.querySelectorAll('input').forEach(el => el.addEventListener('input', autoSave));
       subBox.appendChild(s);
     }
@@ -344,7 +344,7 @@ function createBag(data = {}) {
       addSubBtn.style.alignSelf = 'flex-start';
       addSubBtn.style.marginTop = '4px';
       addSubBtn.textContent = '+ подпункт';
-      addSubBtn.onclick = () => { addSubItem(); autoSave(); };
+      addSubBtn.onclick = () => { addSubItem(); autoSave(); onUpdate(); };
       subBox.appendChild(addSubBtn);
     }
 
@@ -356,8 +356,8 @@ function createBag(data = {}) {
       if (open) ensureAddBtn();
     };
 
-    row.querySelector('.item-del').onclick = () => { row.remove(); updateBagStats(); autoSave(); };
-    row.querySelectorAll('.bag-item-main input').forEach(el => el.addEventListener('input', () => { updateBagStats(); autoSave(); }));
+    row.querySelector('.item-del').onclick = () => { row.remove(); updateBagStats(); autoSave(); onUpdate(); };
+    row.querySelectorAll('.bag-item-main input').forEach(el => el.addEventListener('input', () => { updateBagStats(); autoSave(); onUpdate(); }));
 
     itemsBox.appendChild(row);
   }
@@ -372,14 +372,14 @@ function createBag(data = {}) {
     });
     div.querySelector('.bag-count').textContent = rows.length;
     div.querySelector('.bag-weight').textContent = totalWeight.toFixed(2);
-    updateTotalWeight();
+    onUpdate();
   }
 
   if (data.name) div.querySelector('.bag-name').value = data.name;
   (data.items || []).forEach(addItem);
 
-  div.querySelector('.bag-add').onclick = () => { addItem(); autoSave(); };
-  div.querySelector('.bag-del').onclick = () => { div.remove(); updateTotalWeight(); autoSave(); };
+  div.querySelector('.bag-add').onclick = () => { addItem(); autoSave(); onUpdate(); };
+  div.querySelector('.bag-del').onclick = () => { div.remove(); onUpdate(); autoSave(); };
   div.querySelector('.bag-name').addEventListener('input', autoSave);
 
   div._updateStats = updateBagStats;
@@ -389,15 +389,24 @@ function createBag(data = {}) {
 
 function updateTotalWeight() {
   let total = 0;
-  $$('.bag').forEach(bag => {
+  $$('#bagContainer .bag').forEach(bag => {
     total += parseFloat(bag.querySelector('.bag-weight').textContent) || 0;
   });
   const el = $('#totalWeight');
   if (el) el.textContent = total.toFixed(2);
 }
 
+function updateSharedTotalWeight() {
+  let total = 0;
+  $$('#sharedBagContainer .bag').forEach(bag => {
+    total += parseFloat(bag.querySelector('.bag-weight').textContent) || 0;
+  });
+  const el = $('#sharedTotalWeight');
+  if (el) el.textContent = total.toFixed(2);
+}
+
 /* ============================================================
-   ЯЧЕЙКИ ЗАКЛИНАНИЙ
+   ЯЧЕЙКИ
    ============================================================ */
 function renderSlots() {
   const box = $('#slotsContainer');
@@ -574,7 +583,6 @@ function gatherBonuses() {
 
 function recalcAll() {
   const bonuses = gatherBonuses();
-
   const bases = {
     hp: parseFloat($('[data-key="hp"]')?.value) || 0,
     defense: parseFloat($('[data-key="defense"]')?.value) || 0,
@@ -885,7 +893,7 @@ function collectData() {
   const data = {
     fields: {}, skills: {}, subclasses: [],
     spells: [], effects: [], actives: [], passives: [], equip: [],
-    bags: [], slots: {}, faith: [],
+    bags: [], sharedBags: [], slots: {}, faith: [],
     photo: $('#photoImg').src && $('#photoImg').src.startsWith('data:') ? $('#photoImg').src : ''
   };
   $$('[data-key]').forEach(el => data.fields[el.dataset.key] = el.value);
@@ -918,6 +926,7 @@ function collectData() {
   collectList('passiveList', 'passives');
   collectList('equipList', 'equip');
 
+  // Личный инвентарь
   $$('#bagContainer .bag').forEach(bag => {
     const items = [];
     bag.querySelectorAll('.bag-item').forEach(r => {
@@ -939,6 +948,30 @@ function collectData() {
       });
     });
     data.bags.push({ name: bag.querySelector('.bag-name').value, items });
+  });
+
+  // Общий инвентарь
+  $$('#sharedBagContainer .bag').forEach(bag => {
+    const items = [];
+    bag.querySelectorAll('.bag-item').forEach(r => {
+      const subs = [];
+      r.querySelectorAll('.sub-item').forEach(s => {
+        subs.push({
+          name: s.querySelector('.s-name').value,
+          qty: s.querySelector('.s-qty').value,
+          desc: s.querySelector('.s-desc').value
+        });
+      });
+      items.push({
+        num: r.querySelector('.i-num').value,
+        name: r.querySelector('.i-name').value,
+        desc: r.querySelector('.i-desc').value,
+        qty: r.querySelector('.i-qty').value,
+        weight: r.querySelector('.i-weight').value,
+        subs
+      });
+    });
+    data.sharedBags.push({ name: bag.querySelector('.bag-name').value, items });
   });
 
   $$('.slot').forEach(slot => {
@@ -993,7 +1026,10 @@ function applyData(d) {
   fill('equipList', 'equip', d.equip);
 
   $('#bagContainer').innerHTML = '';
-  (d.bags || []).forEach(b => $('#bagContainer').appendChild(createBag(b)));
+  (d.bags || []).forEach(b => $('#bagContainer').appendChild(createBag(b, updateTotalWeight)));
+
+  $('#sharedBagContainer').innerHTML = '';
+  (d.sharedBags || []).forEach(b => $('#sharedBagContainer').appendChild(createBag(b, updateSharedTotalWeight)));
 
   if (d.slots) {
     Object.entries(d.slots).forEach(([slotId, src]) => {
@@ -1014,6 +1050,7 @@ function applyData(d) {
 
   renderFaithThresholds(d.faith);
   updateTotalWeight();
+  updateSharedTotalWeight();
   recalcAll();
 }
 
@@ -1064,7 +1101,7 @@ function resetAll() {
   if (!confirm('Удалить все данные персонажа?')) return;
   localStorage.removeItem(STORAGE_KEY);
   $$('[data-key], [data-skill]').forEach(el => el.value = '');
-  ['subclassList','spellContainer','effectList','activeList','passiveList','bagContainer','equipList','faithThresholds'].forEach(id => {
+  ['subclassList','spellContainer','effectList','activeList','passiveList','bagContainer','sharedBagContainer','equipList','faithThresholds'].forEach(id => {
     const el = document.getElementById(id); if (el) el.innerHTML = '';
   });
   const img = $('#photoImg');
@@ -1075,6 +1112,7 @@ function resetAll() {
   renderSlots();
   renderFaithThresholds();
   updateTotalWeight();
+  updateSharedTotalWeight();
   recalcAll();
   toast('✖ Сброшено');
 }
@@ -1140,7 +1178,7 @@ function initToggles() {
 }
 
 /* ============================================================
-   ВКЛАДКИ (Только Лист и Инвентарь)
+   ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
    ============================================================ */
 function initTabs() {
   const sheetView = $('#sheetView');
@@ -1190,7 +1228,10 @@ function init() {
   $('#addEffectBtn').onclick   = () => { $('#effectList').appendChild(createListCard('effect')); autoSave(); };
   $('#addActiveBtn').onclick   = () => { $('#activeList').appendChild(createListCard('active')); autoSave(); };
   $('#addPassiveBtn').onclick  = () => { $('#passiveList').appendChild(createListCard('passive')); autoSave(); };
-  $('#addBagBtn').onclick      = () => { $('#bagContainer').appendChild(createBag()); autoSave(); };
+  
+  $('#addBagBtn').onclick      = () => { $('#bagContainer').appendChild(createBag({}, updateTotalWeight)); autoSave(); };
+  $('#addSharedBagBtn').onclick = () => { $('#sharedBagContainer').appendChild(createBag({}, updateSharedTotalWeight)); autoSave(); };
+
   $('#addEquipBtn').onclick    = () => { $('#equipList').appendChild(createListCard('equip')); autoSave(); };
   $('#addFaithBtn').onclick    = () => { $('#faithThresholds').appendChild(createFaithRow()); autoSave(); };
 
@@ -1198,12 +1239,7 @@ function init() {
   initBreakdownClicks();
   initToggles();
   initTabs();
-  #inventoryView {
-  display: block;
-}
-#inventoryView.hidden {
-  display: none;
-}
+  
   toast('☠ Лист персонажа загружен');
 }
 
