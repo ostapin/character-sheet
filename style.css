@@ -559,3 +559,9 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .character-panel { grid-template-columns: 1fr !important; }
   .sub-item { grid-template-columns: 1fr; }
 }
+#inventoryView {
+  display: block;
+}
+#inventoryView.hidden {
+  display: none;
+}
