@@ -167,7 +167,7 @@ const TREE_NODES = [
 
   { id: 'tyrant', name: 'Тиран', type: 'skill', parent: 'were', cost: '3', multi: '4', x: 3700, y: 1500 },
   { id: 'd25', name: 'А. "Опасные недра"', type: 'skill', parent: 'tyrant', cost: '3', multi: '4', x: 3650, y: 1700, desc: 'Призывает элементаля; скорость 2, хп 50, урон 2д10+5 дробящего. При 0 хп нанесет 1д8 всем в области. Ячейка 3 круг' },
-  { id: 'd26', name: 'П. "Ячейка 3ур"', type: 'skill', parent: 'tyrant', cost: '3', multi: '4', x: 3750, y: 1700, desc: 'Дает ячейку 3 уровня.' }
+  { id: 'd26', name: 'П. "Ячейка 3ур"', type: 'skill', parent: 'tyrant', cost: '3', multi: '4', x: 3750, y: 1700, desc: 'Дает ячейку 3 уровня.' },
   // ================= ВАРВАР =================
   { id: 'barb', name: 'Варвар', type: 'class', parent: null, cost: '0', multi: '4', x: 4200, y: 100 },
   
