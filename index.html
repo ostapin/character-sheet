@@ -11,7 +11,7 @@
 <header class="topbar">
   <div class="nav-tabs">
     <button class="nav-tab active" id="tabSheetBtn">📜 Лист персонажа</button>
-    <button class="nav-tab" id="tabInvBtn">🎒 Инвентарь</button>
+    <button class="nav-tab" id="tabInvBtn">🎒 Общий инвентарь</button>
   </div>
   <div class="actions">
     <button id="saveBtn" class="btn btn-green">💾 Сохранить</button>
@@ -137,6 +137,17 @@
     <button class="btn btn-add" id="addPassiveBtn">+ Добавить пассивный навык</button>
   </section>
 
+  <!-- ЛИЧНЫЙ ИНВЕНТАРЬ (СУМКИ) -->
+  <section class="card card-wide">
+    <div class="section-header">
+      <h2>Личный инвентарь</h2>
+      <button class="btn-toggle" data-target="bagContainer">▾ Скрыть</button>
+    </div>
+    <div id="bagContainer"></div>
+    <button class="btn btn-add" id="addBagBtn">+ Создать сумку</button>
+    <div class="total-weight">Общий вес: <span id="totalWeight">0</span></div>
+  </section>
+
   <section class="card card-wide">
     <div class="section-header">
       <h2>Снаряжение (надето)</h2>
@@ -167,15 +178,15 @@
 
 </main>
 
-<!-- ================= ВКЛАДКА: ИНВЕНТАРЬ ================= -->
-<div id="inventoryView" class="hidden" style="padding: 24px; height: calc(100vh - 80px); overflow-y: auto;">
+<!-- ================= ВКЛАДКА: ОБЩИЙ ИНВЕНТАРЬ ================= -->
+<div id="inventoryView" class="hidden" style="padding: 24px; height: calc(100vh - 80px); overflow-y: auto; max-width: 1500px; margin: 0 auto;">
   <section class="card card-wide">
     <div class="section-header">
-      <h2>Инвентарь</h2>
+      <h2>Общий инвентарь</h2>
     </div>
-    <div id="bagContainer"></div>
-    <button class="btn btn-add" id="addBagBtn">+ Создать сумку</button>
-    <div class="total-weight">Общий вес: <span id="totalWeight">0</span></div>
+    <div id="sharedBagContainer"></div>
+    <button class="btn btn-add" id="addSharedBagBtn">+ Создать сумку</button>
+    <div class="total-weight">Общий вес: <span id="sharedTotalWeight">0</span></div>
   </section>
 </div>
 
