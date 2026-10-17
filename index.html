@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Абсолютный Мир</title>
+  <title>Лист персонажа — Хань Фу</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,6 +12,7 @@
   <div class="nav-tabs">
     <button class="nav-tab active" id="tabSheetBtn">📜 Лист персонажа</button>
     <button class="nav-tab" id="tabTreeBtn">🌳 Древо прокачки</button>
+    <button class="nav-tab" id="tabInvBtn">🎒 Инвентарь</button>
   </div>
   <div class="actions">
     <button id="saveBtn" class="btn btn-green">💾 Сохранить</button>
@@ -26,7 +27,6 @@
 <!-- ================= ВКЛАДКА: ЛИСТ ПЕРСОНАЖА ================= -->
 <main class="grid" id="sheetView">
 
-  <!-- ПЕРСОНАЖ: фото слева, поля справа -->
   <section class="card card-wide character-panel">
     <div class="character-photo">
       <div class="photo-box" id="photoBox">
@@ -50,7 +50,6 @@
     </div>
   </section>
 
-  <!-- ХАРАКТЕРИСТИКИ -->
   <section class="card-half">
     <div class="card">
       <h2>Общие характеристики</h2>
@@ -78,7 +77,6 @@
     </div>
   </section>
 
-  <!-- ПОДКЛАССЫ -->
   <section class="card-half">
     <div class="card">
       <h2>Подклассы</h2>
@@ -87,7 +85,6 @@
     </div>
   </section>
 
-  <!-- НАВЫКИ -->
   <section class="card card-wide">
     <h2>Характеристики навыков</h2>
     <div class="skill-columns">
@@ -97,7 +94,6 @@
     </div>
   </section>
 
-  <!-- ЯЧЕЙКИ -->
   <section class="card card-wide">
     <div class="section-header">
       <h2>Ячейки заклинаний</h2>
@@ -106,7 +102,6 @@
     <div id="slotsContainer"></div>
   </section>
 
-  <!-- ЗАКЛИНАНИЯ -->
   <section class="card card-wide">
     <div class="section-header">
       <h2>Заклинания</h2>
@@ -116,7 +111,6 @@
     <button class="btn btn-add" id="addSpellBtn">+ Добавить заклинание</button>
   </section>
 
-  <!-- ЭФФЕКТЫ -->
   <section class="card card-wide">
     <div class="section-header">
       <h2>Эффекты и навыки</h2>
@@ -126,7 +120,6 @@
     <button class="btn btn-add" id="addEffectBtn">+ Добавить эффект</button>
   </section>
 
-  <!-- АКТИВНЫЕ -->
   <section class="card card-wide">
     <div class="section-header">
       <h2>Активные навыки</h2>
@@ -136,7 +129,6 @@
     <button class="btn btn-add" id="addActiveBtn">+ Добавить активный навык</button>
   </section>
 
-  <!-- ПАССИВНЫЕ -->
   <section class="card card-wide">
     <div class="section-header">
       <h2>Пассивные навыки</h2>
@@ -146,10 +138,10 @@
     <button class="btn btn-add" id="addPassiveBtn">+ Добавить пассивный навык</button>
   </section>
 
-  <!-- ИНВЕНТАРЬ -->
+  <!-- Старый инвентарь (Сумки) оставил на всякий случай, если захочешь использовать -->
   <section class="card card-wide">
     <div class="section-header">
-      <h2>Инвентарь</h2>
+      <h2>Сумки (Лист)</h2>
       <button class="btn-toggle" data-target="bagContainer">▾ Скрыть</button>
     </div>
     <div id="bagContainer"></div>
@@ -157,7 +149,6 @@
     <div class="total-weight">Общий вес: <span id="totalWeight">0</span></div>
   </section>
 
-  <!-- СНАРЯЖЕНИЕ -->
   <section class="card card-wide">
     <div class="section-header">
       <h2>Снаряжение (надето)</h2>
@@ -171,7 +162,6 @@
     </div>
   </section>
 
-  <!-- КОШЕЛЬ -->
   <section class="card">
     <h2>Кошель</h2>
     <div class="stat-grid">
@@ -181,7 +171,6 @@
     </div>
   </section>
 
-  <!-- ПОРОГИ ВЕРЫ -->
   <section class="card">
     <h2>Пороги веры (некро)</h2>
     <div id="faithThresholds"></div>
@@ -207,9 +196,42 @@
   </div>
 </div>
 
+<!-- ================= ВКЛАДКА: ОБЩИЙ ИНВЕНТАРЬ ================= -->
+<div id="inventoryView" class="hidden" style="padding: 24px; height: calc(100vh - 80px); overflow-y: auto;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h2 style="color: var(--green); text-transform: uppercase; letter-spacing: 1.5px;">Общий инвентарь</h2>
+    <div>
+      <button class="btn btn-green" id="invViewListBtn">📋 Список</button>
+      <button class="btn" id="invViewGridBtn">🔲 Ячейки</button>
+    </div>
+  </div>
+  
+  <!-- Вид: Список -->
+  <div id="invListContainer">
+    <table class="inv-table" style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="border-bottom: 1px solid var(--border); text-align: left; color: var(--muted);">
+          <th style="padding: 8px;">Предмет</th>
+          <th style="padding: 8px; width: 80px;">Кол-во</th>
+          <th style="padding: 8px; width: 80px;">Вес</th>
+          <th style="padding: 8px; width: 40px;"></th>
+        </tr>
+      </thead>
+      <tbody id="invListBody"></tbody>
+    </table>
+    <button class="btn btn-add" id="addInvListItemBtn" style="margin-top: 15px;">+ Добавить предмет в список</button>
+  </div>
+
+  <!-- Вид: Ячейки -->
+  <div id="invGridContainer" class="hidden">
+    <div id="invGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px;"></div>
+    <button class="btn btn-add" id="addInvGridItemBtn" style="margin-top: 15px;">+ Добавить пустую ячейку</button>
+  </div>
+</div>
+
 <footer class="footer"><span>Лист персонажа · Абсолютный Мир</span></footer>
 
-<!-- МОДАЛКА: БОЙ -->
+<!-- МОДАЛКИ -->
 <div class="modal" id="combatModal">
   <div class="modal-content modal-wide">
     <div class="modal-header">
@@ -220,7 +242,6 @@
   </div>
 </div>
 
-<!-- МОДАЛКА: РАСШИФРОВКА -->
 <div class="modal" id="breakdownModal">
   <div class="modal-content">
     <div class="modal-header">
@@ -231,7 +252,6 @@
   </div>
 </div>
 
-<!-- МОДАЛКА: ОПИСАНИЕ УЗЛА ДРЕВА -->
 <div class="modal" id="treeNodeModal">
   <div class="modal-content">
     <div class="modal-header">
