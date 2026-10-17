@@ -1,5 +1,5 @@
 /* ============================================================
-   ЛИСТ ПЕРСОНАЖА — вся логика v4
+   ЛИСТ ПЕРСОНАЖА — вся логика v4 (Восстановлено)
    ============================================================ */
 
 const STORAGE_KEY = 'absolute_world_character_v4';
@@ -339,7 +339,6 @@ function createBag(data = {}) {
       item.subs.forEach(addSubItem);
     }
 
-    // кнопка добавить подпункт — добавляется при первом раскрытии
     let addSubBtn = null;
     function ensureAddBtn() {
       if (addSubBtn) return;
@@ -557,7 +556,6 @@ function gatherBonuses() {
     const condition = row.querySelector('.bonus-cond').value;
     if (!value) return;
 
-    // определяем источник
     let source = 'Неизвестно';
     const listCard = row.closest('.list-card');
     if (listCard) {
@@ -753,7 +751,6 @@ function openCombat() {
   const list = $('#combatList');
   const items = [];
 
-  // заклинания из ячеек
   $$('.slot').forEach(slot => {
     const img = slot.querySelector('img');
     if (img && img.src && img.src.startsWith('data:')) {
@@ -766,14 +763,12 @@ function openCombat() {
     }
   });
 
-  // снаряжение с уроном
   $$('#equipList .list-card').forEach(card => {
     const dmg = card.querySelector('.f-damage')?.value;
     const name = card.querySelector('.f-name')?.value;
     if (dmg) items.push({ type: 'equip', name: name || 'Снаряжение', damage: dmg });
   });
 
-  // заклинания из списка с уроном
   $$('#spellContainer .list-card').forEach(card => {
     const dmg = card.querySelector('.f-damage')?.value;
     const name = card.querySelector('.f-name')?.value;
@@ -1154,6 +1149,157 @@ function initToggles() {
 }
 
 /* ============================================================
+   ДРЕВО ПРОКАЧКИ (НОВОЕ)
+   ============================================================ */
+const TREE_NODES = [
+  // --- ЖРЕЦ ---
+  { id: 'priest', name: 'Жрец', type: 'class', parent: null, cost: '0-2-3-4', x: 1800, y: 200 },
+  { id: 'healer', name: 'Целитель', type: 'subclass', parent: 'priest', cost: '0-2-3-4', x: 1400, y: 450, desc: 'А. "Область исцеления"\nП. "Ячейка 1ур"' },
+  { id: 'abbot', name: 'Настоятель', type: 'sub-subclass', parent: 'healer', cost: '3-4-5-6', x: 1100, y: 700, desc: 'А. "Призыв оружия"\nП. "Стеклянный сосуд"' },
+  { id: 'listener', name: 'Внемлющий', type: 'skill', parent: 'abbot', cost: '4', x: 900, y: 950, desc: 'А. "Молитва"\nА. "Мученик"' },
+  { id: 'templar', name: 'Храмовник', type: 'skill', parent: 'abbot', cost: '4', x: 1200, y: 950, desc: 'А. "Отпущение"\nП. "Святыня"' },
+  { id: 'doctor', name: 'Лекарь', type: 'sub-subclass', parent: 'healer', cost: '3-4-5-6', x: 1700, y: 700, desc: 'А. "Очищение"\nП. "Ячейка 2ур"' },
+  { id: 'exorcist', name: 'Экзорцист', type: 'skill', parent: 'doctor', cost: '4', x: 1500, y: 950, desc: 'А. "Священный бич"\nА. "Изгнание"' },
+  { id: 'medic', name: 'Врач', type: 'skill', parent: 'doctor', cost: '4', x: 1800, y: 950, desc: 'А. "Плоть и духовность"\nП. "Ячейка 3ур"' },
+  { id: 'soulreaper', name: 'Душегуб', type: 'subclass', parent: 'priest', cost: '0-2-3-4', x: 2200, y: 450, desc: 'А. "Загробный холод"\nП. "Ячейка 1ур"' },
+  { id: 'sectarian', name: 'Сектант', type: 'sub-subclass', parent: 'soulreaper', cost: '3-4-5-6', x: 1900, y: 700, desc: 'А. "Мертвая аура"\nП. "Ячейка 2ур"' },
+  { id: 'cultist', name: 'Культист', type: 'skill', parent: 'sectarian', cost: '4', x: 1700, y: 950, desc: 'А. "Черные путы"\nП. "Ячейка 3 ур"' },
+  { id: 'idolater', name: 'Идолопоклонник', type: 'skill', parent: 'sectarian', cost: '4', x: 2000, y: 950, desc: 'А. "Сглаз"\nА. "Тотем"' },
+  { id: 'imitator', name: 'Подражатель', type: 'sub-subclass', parent: 'soulreaper', cost: '3-4-5-6', x: 2500, y: 700, desc: 'А. "Контрзаклинание"\nП. "Тяга"' },
+  { id: 'necromancer', name: 'Некромант', type: 'skill', parent: 'imitator', cost: '4', x: 2300, y: 950, desc: 'А. "Призыв скелета"\nА. "Зомби"' },
+  { id: 'warlock', name: 'Колдун', type: 'skill', parent: 'imitator', cost: '4', x: 2600, y: 950, desc: 'А. "Мучительные раны"\nП. "Мнимая кровь"' },
+  // --- ПЛУТ ---
+  { id: 'rogue', name: 'Плут', type: 'class', parent: null, cost: '0-2-3-4', x: 400, y: 200 },
+  { id: 'adventurer', name: 'Авантюрист', type: 'subclass', parent: 'rogue', cost: '0-2-3-4', x: 200, y: 450, desc: 'А. "Зажигалка"\nП. "Щепетильность"' },
+  { id: 'seeker', name: 'Искатель', type: 'skill', parent: 'adventurer', cost: '3-4-5-6', x: 100, y: 700, desc: 'А. "Улики"\nА. "Нюх"' },
+  { id: 'treasure', name: 'Охотник за сокровищами', type: 'skill', parent: 'adventurer', cost: '3-4-5-6', x: 300, y: 700, desc: 'А. "Давно в деле"\nА. "Ложись"' },
+  { id: 'assassin', name: 'Ассасин', type: 'subclass', parent: 'rogue', cost: '0-2-3-4', x: 600, y: 450, desc: 'А. "Холодный укол"\nП. "Вторая атака"' },
+  { id: 'shadow', name: 'Теневой клинок', type: 'skill', parent: 'assassin', cost: '3-4-5-6', x: 500, y: 700, desc: 'А. "Исчезновение"\nП. "Холодный расчет"' },
+  { id: 'headhunter', name: 'Охотник за головами', type: 'skill', parent: 'assassin', cost: '3-4-5-6', x: 700, y: 700, desc: 'А. "Глаз наметан"\nП. "Стремительный"' },
+  // --- ВНЕКЛАССОВЫЕ ---
+  { id: 'strong', name: 'Крепкий', type: 'skill', parent: null, cost: '3-4-5-6', x: 3100, y: 200, desc: 'Внеклассовый навык.' },
+  { id: 'heavy', name: 'Тяжеловес', type: 'skill', parent: null, cost: '3-4-5-6', x: 3100, y: 350, desc: 'Внеклассовый навык.' },
+  { id: 'healthy', name: 'Здоровяк', type: 'skill', parent: null, cost: '3-4-5-6', x: 3100, y: 500, desc: 'Внеклассовый навык.' },
+  { id: 'muscle', name: 'Гора мышц', type: 'skill', parent: null, cost: '3-4-5-6', x: 3100, y: 650, desc: 'Внеклассовый навык.' },
+  // --- ТОКЕНЫ ---
+  { id: 'tok1', name: 'Завалялось в кармане', type: 'token', parent: null, cost: '1', x: 3400, y: 200, desc: 'Токен' },
+  { id: 'tok2', name: 'Старые связи', type: 'token', parent: null, cost: '1', x: 3400, y: 300, desc: 'Токен' },
+];
+
+let treeScale = 1;
+let isDragging = false;
+let startX = 0, startY = 0;
+
+function initTree() {
+  const canvas = $('#treeCanvas');
+  const svg = $('#treeLines');
+  const nodesBox = $('#treeNodes');
+  if (!canvas || !nodesBox) return;
+
+  nodesBox.innerHTML = '';
+  svg.innerHTML = '';
+
+  TREE_NODES.forEach(node => {
+    const div = document.createElement('div');
+    div.className = `tree-node ${node.type}`;
+    div.style.left = `${node.x}px`;
+    div.style.top = `${node.y}px`;
+    div.innerHTML = `
+      <div class="node-title">${node.name}</div>
+      <div class="node-type">${node.type === 'class' ? 'Класс' : node.type === 'subclass' ? 'Подкласс' : node.type === 'sub-subclass' ? 'Ветвь' : node.type === 'token' ? 'Токен' : 'Навык'}</div>
+      <div class="node-cost">Цена: ${node.cost}</div>
+    `;
+    div.onclick = (e) => { e.stopPropagation(); showTreeNodeInfo(node); };
+    nodesBox.appendChild(div);
+  });
+
+  TREE_NODES.forEach(node => {
+    if (!node.parent) return;
+    const parent = TREE_NODES.find(n => n.id === node.parent);
+    if (!parent) return;
+    const x1 = parent.x + 90, y1 = parent.y + 60;
+    const x2 = node.x + 90, y2 = node.y;
+    const d = `M ${x1} ${y1} C ${x1} ${(y1+y2)/2}, ${x2} ${(y1+y2)/2}, ${x2} ${y2}`;
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', d);
+    path.setAttribute('stroke', 'var(--green)');
+    path.setAttribute('stroke-width', '2');
+    path.setAttribute('fill', 'none');
+    path.setAttribute('opacity', '0.6');
+    svg.appendChild(path);
+  });
+
+  const wrapper = $('#treeWrapper');
+  wrapper.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    startX = e.pageX - wrapper.offsetLeft;
+    startY = e.pageY - wrapper.offsetTop;
+    wrapper.style.cursor = 'grabbing';
+  });
+  wrapper.addEventListener('mouseleave', () => { isDragging = false; wrapper.style.cursor = 'grab'; });
+  wrapper.addEventListener('mouseup', () => { isDragging = false; wrapper.style.cursor = 'grab'; });
+  wrapper.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const x = e.pageX - wrapper.offsetLeft;
+    const y = e.pageY - wrapper.offsetTop;
+    const walkX = (x - startX) * 1.5;
+    const walkY = (y - startY) * 1.5;
+    wrapper.scrollLeft -= walkX;
+    wrapper.scrollTop -= walkY;
+  });
+
+  $('#zoomIn').onclick = () => { treeScale += 0.1; applyZoom(canvas); };
+  $('#zoomOut').onclick = () => { treeScale = Math.max(0.3, treeScale - 0.1); applyZoom(canvas); };
+  $('#zoomReset').onclick = () => { treeScale = 1; applyZoom(canvas); };
+}
+
+function applyZoom(canvas) {
+  canvas.style.transform = `scale(${treeScale})`;
+}
+
+function showTreeNodeInfo(node) {
+  $('#treeNodeTitle').textContent = node.name;
+  let typeName = 'Навык';
+  if (node.type === 'class') typeName = 'Класс';
+  if (node.type === 'subclass') typeName = 'Подкласс';
+  if (node.type === 'sub-subclass') typeName = 'Ветвь развития';
+  if (node.type === 'token') typeName = 'Токен';
+  $('#treeNodeBody').innerHTML = `
+    <div style="color:var(--green); font-weight:700; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px; font-size:12px;">${typeName}</div>
+    <div style="color:var(--gold); font-weight:800; font-size:18px; margin-bottom:16px;">Цена: ${node.cost} очков</div>
+    <div style="background:#0a0f0a; padding:16px; border-radius:8px; border-left:3px solid var(--green); line-height:1.6; white-space:pre-wrap;">${node.desc || 'Описание отсутствует.'}</div>
+  `;
+  $('#treeNodeModal').classList.add('open');
+}
+
+/* ============================================================
+   ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
+   ============================================================ */
+function initTabs() {
+  const sheetView = $('#sheetView');
+  const treeView = $('#treeView');
+  const tabSheet = $('#tabSheetBtn');
+  const tabTree = $('#tabTreeBtn');
+
+  if (!tabSheet || !tabTree) return;
+
+  tabSheet.onclick = () => {
+    sheetView.classList.remove('hidden');
+    treeView.classList.add('hidden');
+    tabSheet.classList.add('active');
+    tabTree.classList.remove('active');
+  };
+
+  tabTree.onclick = () => {
+    sheetView.classList.add('hidden');
+    treeView.classList.remove('hidden');
+    tabSheet.classList.remove('active');
+    tabTree.classList.add('active');
+  };
+}
+
+/* ============================================================
    INIT
    ============================================================ */
 function init() {
@@ -1189,6 +1335,9 @@ function init() {
   initPhoto();
   initBreakdownClicks();
   initToggles();
+  initTabs();
+  initTree();
+  
   toast('☠ Лист персонажа загружен');
 }
 
