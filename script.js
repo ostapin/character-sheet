@@ -521,7 +521,6 @@ function createSlotEl(slotId, num, canUse) {
 
   return slot;
 }
-
 /* ============================================================
    ПАРСЕР КУБИКОВ
    ============================================================ */
@@ -556,7 +555,6 @@ function gatherBonuses() {
     const condition = row.querySelector('.bonus-cond').value;
     if (!value) return;
 
-    // определяем источник
     let source = 'Неизвестно';
     const listCard = row.closest('.list-card');
     if (listCard) {
@@ -578,7 +576,6 @@ function gatherBonuses() {
 
 function recalcAll() {
   const bonuses = gatherBonuses();
-
   const bases = {
     hp: parseFloat($('[data-key="hp"]')?.value) || 0,
     defense: parseFloat($('[data-key="defense"]')?.value) || 0,
@@ -752,7 +749,6 @@ function openCombat() {
   const list = $('#combatList');
   const items = [];
 
-  // заклинания из ячеек
   $$('.slot').forEach(slot => {
     const img = slot.querySelector('img');
     if (img && img.src && img.src.startsWith('data:')) {
@@ -765,14 +761,12 @@ function openCombat() {
     }
   });
 
-  // снаряжение с уроном
   $$('#equipList .list-card').forEach(card => {
     const dmg = card.querySelector('.f-damage')?.value;
     const name = card.querySelector('.f-name')?.value;
     if (dmg) items.push({ type: 'equip', name: name || 'Снаряжение', damage: dmg });
   });
 
-  // заклинания из списка с уроном
   $$('#spellContainer .list-card').forEach(card => {
     const dmg = card.querySelector('.f-damage')?.value;
     const name = card.querySelector('.f-name')?.value;
@@ -893,7 +887,8 @@ function collectData() {
     fields: {}, skills: {}, subclasses: [],
     spells: [], effects: [], actives: [], passives: [], equip: [],
     bags: [], slots: {}, faith: [],
-    photo: $('#photoImg').src && $('#photoImg').src.startsWith('data:') ? $('#photoImg').src : ''
+    photo: $('#photoImg').src && $('#photoImg').src.startsWith('data:') ? $('#photoImg').src : '',
+    inventory: inventoryData
   };
   $$('[data-key]').forEach(el => data.fields[el.dataset.key] = el.value);
   $$('[data-skill]').forEach(el => data.skills[el.dataset.skill] = el.value);
@@ -984,6 +979,12 @@ function applyData(d) {
     img.style.display = 'block';
     const ph = $('#photoBox .photo-ph');
     if (ph) ph.style.display = 'none';
+  }
+
+  if (d.inventory) {
+    inventoryData = d.inventory;
+    renderInventoryList();
+    renderInventoryGrid();
   }
 
   $('#subclassList').innerHTML = '';
@@ -1079,6 +1080,10 @@ function resetAll() {
   img.style.display = 'none';
   const ph = $('#photoBox .photo-ph');
   if (ph) ph.style.display = 'block';
+  
+  inventoryData = { list: [], grid: [] };
+  renderInventoryList(); renderInventoryGrid();
+
   renderSlots();
   renderFaithThresholds();
   updateTotalWeight();
@@ -1086,9 +1091,6 @@ function resetAll() {
   toast('✖ Сброшено');
 }
 
-/* ============================================================
-   ФОТО ПЕРСОНАЖА
-   ============================================================ */
 function initPhoto() {
   const box = $('#photoBox');
   const img = $('#photoImg');
@@ -1115,9 +1117,6 @@ function initPhoto() {
   });
 }
 
-/* ============================================================
-   КЛИК ПО ИТОГАМ → РАСШИФРОВКА
-   ============================================================ */
 function initBreakdownClicks() {
   document.addEventListener('click', e => {
     const totalEl = e.target.closest('[data-total-btn]');
@@ -1138,9 +1137,6 @@ function initBreakdownClicks() {
   $('#closeBreakdownBtn').onclick = () => $('#breakdownModal').classList.remove('open');
 }
 
-/* ============================================================
-   TOGGLES
-   ============================================================ */
 function initToggles() {
   $$('.btn-toggle').forEach(btn => {
     btn.onclick = () => {
@@ -1151,9 +1147,8 @@ function initToggles() {
     };
   });
 }
-
 /* ============================================================
-   ДРЕВО ПРОКАЧКИ (НОВЫЙ КОД В КОНЦЕ)
+   ДРЕВО ПРОКАЧКИ
    ============================================================ */
 let treeScale = 1;
 let isDragging = false;
@@ -1169,7 +1164,6 @@ function initTree() {
   nodesBox.innerHTML = '';
   svg.innerHTML = '';
 
-  // 1. Отрисовка узлов (ТОЛЬКО НАЗВАНИЕ, ТИП И ПРАВИЛЬНАЯ ЦЕНА)
   TREE_NODES.forEach(node => {
     const div = document.createElement('div');
     div.className = `tree-node ${node.type}`;
@@ -1178,22 +1172,20 @@ function initTree() {
     
     div.innerHTML = `
       <div class="node-title">${node.name}</div>
-      <div class="node-type">${node.type === 'class' ? 'Класс' : 'Подкласс'}</div>
+      <div class="node-type">${node.type === 'class' ? 'Класс' : node.type === 'subclass' ? 'Подкласс' : node.type === 'sub-subclass' ? 'Ветвь' : node.type === 'token' ? 'Токен' : 'Навык'}</div>
       <div class="node-cost" style="font-size:10px;">Свой: ${node.cost}</div>
-      ${node.multi !== '-' ? `<div class="node-cost" style="font-size:10px; color:#a855f7;">Мульти: ${node.multi}</div>` : ''}
+      <div class="node-cost" style="font-size:10px; color:#a855f7;">Мульти: ${node.multi}</div>
     `;
     div.onclick = (e) => { e.stopPropagation(); showTreeNodeInfo(node); };
     nodesBox.appendChild(div);
   });
 
-  // 2. Отрисовка линий (Безье)
   TREE_NODES.forEach(node => {
     if (!node.parent) return;
     const parent = TREE_NODES.find(n => n.id === node.parent);
     if (!parent) return;
     
-    // Центры карточек (примерно 100px вправо, 70px вниз)
-    const x1 = parent.x + 100, y1 = parent.y + 70;
+    const x1 = parent.x + 100, y1 = parent.y + 90;
     const x2 = node.x + 100, y2 = node.y;
     
     const d = `M ${x1} ${y1} C ${x1} ${(y1+y2)/2}, ${x2} ${(y1+y2)/2}, ${x2} ${y2}`;
@@ -1206,116 +1198,174 @@ function initTree() {
     svg.appendChild(path);
   });
 
-  // 3. Отрисовка таблиц внизу
-  renderTreeTables();
-
-  // 4. Движение
   const wrapper = $('#treeWrapper');
-  wrapper.addEventListener('mousedown', (e) => { 
-    if (e.button !== 0) return; 
-    isDragging = true; startX = e.pageX; startY = e.pageY; 
-    scrollLeft = wrapper.scrollLeft; scrollTop = wrapper.scrollTop; 
-    wrapper.style.cursor = 'grabbing'; e.preventDefault(); 
+  
+  wrapper.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+    isDragging = true;
+    startX = e.pageX;
+    startY = e.pageY;
+    scrollLeft = wrapper.scrollLeft;
+    scrollTop = wrapper.scrollTop;
+    wrapper.style.cursor = 'grabbing';
+    e.preventDefault();
   });
+
   wrapper.addEventListener('mouseleave', () => { isDragging = false; wrapper.style.cursor = 'grab'; });
   wrapper.addEventListener('mouseup', () => { isDragging = false; wrapper.style.cursor = 'grab'; });
-  wrapper.addEventListener('mousemove', (e) => { 
-    if (!isDragging) return; e.preventDefault(); 
-    const walkX = e.pageX - startX; const walkY = e.pageY - startY; 
-    wrapper.scrollLeft = scrollLeft - walkX; wrapper.scrollTop = scrollTop - walkY; 
+  
+  wrapper.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const walkX = e.pageX - startX;
+    const walkY = e.pageY - startY;
+    wrapper.scrollLeft = scrollLeft - walkX;
+    wrapper.scrollTop = scrollTop - walkY;
   });
 
-  // 5. Зум
   $('#zoomIn').onclick = () => { treeScale += 0.1; canvas.style.transform = `scale(${treeScale})`; };
   $('#zoomOut').onclick = () => { treeScale = Math.max(0.3, treeScale - 0.1); canvas.style.transform = `scale(${treeScale})`; };
   $('#zoomReset').onclick = () => { treeScale = 1; canvas.style.transform = `scale(${treeScale})`; };
-}
-
-function renderTreeTables() {
-  let tablesBox = document.getElementById('treeTables');
-  if (!tablesBox) {
-    tablesBox = document.createElement('div');
-    tablesBox.id = 'treeTables';
-    tablesBox.style.marginTop = '2500px'; // Отступ от дерева
-    tablesBox.style.padding = '20px';
-    tablesBox.style.maxWidth = '1200px';
-    tablesBox.style.margin = '2500px auto 50px auto';
-    document.getElementById('treeCanvas').appendChild(tablesBox);
-  }
-  tablesBox.innerHTML = '';
-
-  // 1. Таблица внеклассовых
-  let html = `<h2 style="color:var(--green); margin-bottom:10px; font-size:18px;">Внеклассовые</h2><div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:30px;">`;
-  TABLE_DATA.extra.forEach(item => {
-    html += `<div class="tree-node skill" style="position:relative; width:auto; left:0; top:0;">
-      <div class="node-title">${item.name}</div>
-      <div class="node-type">Навык</div>
-      <div class="node-cost" style="color:var(--gold); font-size:10px; margin-top:5px;">Цена: ${item.cost}</div>
-    </div>`;
-  });
-  html += `</div>`;
-
-  // 2. Таблица токенов
-  html += `<h2 style="color:var(--green); margin-bottom:10px; font-size:18px;">Токены</h2><div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:30px;">`;
-  TABLE_DATA.tokens.forEach(item => {
-    html += `<div class="tree-node token" style="position:relative; width:auto; left:0; top:0;">
-      <div class="node-title">${item.name}</div>
-      <div class="node-type">Токен</div>
-      <div class="node-cost" style="color:var(--gold); font-size:10px; margin-top:5px;">Цена: ${item.cost}</div>
-    </div>`;
-  });
-  html += `</div>`;
-
-  // 3. Таблица фокусов
-  html += `<h2 style="color:var(--green); margin-bottom:10px; font-size:18px;">Фокусы</h2><div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:30px;">`;
-  TABLE_DATA.focuses.forEach(item => {
-    html += `<div class="tree-node skill" style="position:relative; width:auto; left:0; top:0;">
-      <div class="node-title">${item.name}</div>
-      <div class="node-type">${item.lvl}</div>
-      <div class="node-cost" style="color:var(--gold); font-size:10px; margin-top:5px;">${item.desc}</div>
-    </div>`;
-  });
-  html += `</div>`;
-
-  tablesBox.innerHTML = html;
 }
 
 function showTreeNodeInfo(node) {
   $('#treeNodeTitle').textContent = node.name;
   let typeName = 'Навык';
   if (node.type === 'class') typeName = 'Класс';
-  if (node.type === 'subclass' || node.type === 'sub-subclass' || node.type === 'skill') typeName = 'Подкласс';
-
+  if (node.type === 'subclass') typeName = 'Подкласс';
+  if (node.type === 'sub-subclass') typeName = 'Ветвь развития';
+  if (node.type === 'token') typeName = 'Токен';
+  
   $('#treeNodeBody').innerHTML = `
     <div style="color:var(--green); font-weight:700; margin-bottom:10px; text-transform:uppercase; font-size:12px;">${typeName}</div>
     <div style="color:var(--gold); font-weight:800; font-size:16px; margin-bottom:8px;">Свой: ${node.cost}</div>
-    ${node.multi !== '-' ? `<div style="color:#a855f7; font-weight:800; font-size:16px; margin-bottom:16px;">Мульти: ${node.multi}</div>` : '<br>'}
+    <div style="color:#a855f7; font-weight:800; font-size:16px; margin-bottom:16px;">Мульти: ${node.multi}</div>
     <div style="background:#0a0f0a; padding:16px; border-radius:8px; border-left:3px solid var(--green); line-height:1.6; white-space:pre-wrap;">${node.desc || 'Описание отсутствует.'}</div>
   `;
   $('#treeNodeModal').classList.add('open');
 }
 
+/* ============================================================
+   ОБЩИЙ ИНВЕНТАРЬ
+   ============================================================ */
+let inventoryMode = 'list';
+let inventoryData = { list: [], grid: [] };
+
+function renderInventoryView() {
+  const listView = $('#invListContainer');
+  const gridView = $('#invGridContainer');
+  const btnList = $('#invViewListBtn');
+  const btnGrid = $('#invViewGridBtn');
+  if (!listView || !gridView) return;
+
+  if (inventoryMode === 'list') {
+    listView.classList.remove('hidden'); gridView.classList.add('hidden');
+    btnList.classList.add('btn-green'); btnGrid.classList.remove('btn-green');
+  } else {
+    listView.classList.add('hidden'); gridView.classList.remove('hidden');
+    btnGrid.classList.add('btn-green'); btnList.classList.remove('btn-green');
+  }
+}
+
+function renderInventoryList() {
+  const tbody = $('#invListBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  inventoryData.list.forEach((item, idx) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td style="padding: 4px;"><input type="text" class="inv-item-name" placeholder="Название" value="${item.name || ''}"></td><td style="padding: 4px;"><input type="number" class="inv-item-qty" placeholder="1" value="${item.qty || ''}"></td><td style="padding: 4px;"><input type="number" class="inv-item-weight" placeholder="0" value="${item.weight || ''}"></td><td style="padding: 4px;"><button class="list-del inv-item-del">✖</button></td>`;
+    tr.querySelector('.inv-item-del').onclick = () => { inventoryData.list.splice(idx, 1); renderInventoryList(); autoSave(); };
+    tr.querySelectorAll('input').forEach(el => el.addEventListener('input', () => {
+      if (el.classList.contains('inv-item-name')) inventoryData.list[idx].name = el.value;
+      if (el.classList.contains('inv-item-qty')) inventoryData.list[idx].qty = el.value;
+      if (el.classList.contains('inv-item-weight')) inventoryData.list[idx].weight = el.value;
+      autoSave();
+    }));
+    tbody.appendChild(tr);
+  });
+}
+
+function renderInventoryGrid() {
+  const gridBox = $('#invGrid');
+  if (!gridBox) return;
+  gridBox.innerHTML = '';
+  inventoryData.grid.forEach((item, idx) => {
+    const cell = document.createElement('div');
+    cell.className = 'inv-grid-cell';
+    cell.style.cssText = 'width: 100px; height: 100px; background: #0a0f0a; border: 1px dashed var(--green-dark); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; position: relative; overflow: hidden;';
+    
+    if (item.img) {
+      cell.innerHTML = `<img src="${item.img}" style="width: 100%; height: 100%; object-fit: cover;">`;
+    } else {
+      cell.innerHTML = `<span style="font-size: 11px; color: var(--muted); text-align: center; padding: 4px;">Кликни для<br>загрузки</span>`;
+    }
+
+    const delBtn = document.createElement('button');
+    delBtn.innerHTML = '✖';
+    delBtn.style.cssText = 'position: absolute; top: 2px; right: 2px; background: rgba(185, 28, 28, 0.8); border: none; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; cursor: pointer; z-index: 2;';
+    delBtn.onclick = (e) => { e.stopPropagation(); inventoryData.grid.splice(idx, 1); renderInventoryGrid(); autoSave(); };
+    cell.appendChild(delBtn);
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file'; fileInput.accept = 'image/*'; fileInput.style.display = 'none';
+    cell.appendChild(fileInput);
+
+    cell.onclick = () => fileInput.click();
+    fileInput.onchange = (e) => {
+      const f = e.target.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        inventoryData.grid[idx].img = ev.target.result;
+        renderInventoryGrid();
+        autoSave();
+      };
+      reader.readAsDataURL(f);
+    };
+
+    gridBox.appendChild(cell);
+  });
+}
+
+function initInventory() {
+  const btnList = $('#invViewListBtn');
+  const btnGrid = $('#invViewGridBtn');
+  if (!btnList || !btnGrid) return;
+
+  btnList.onclick = () => { inventoryMode = 'list'; renderInventoryView(); };
+  btnGrid.onclick = () => { inventoryMode = 'grid'; renderInventoryView(); };
+
+  $('#addInvListItemBtn').onclick = () => { inventoryData.list.push({ name: '', qty: '', weight: '' }); renderInventoryList(); autoSave(); };
+  $('#addInvGridItemBtn').onclick = () => { inventoryData.grid.push({ img: '' }); renderInventoryGrid(); autoSave(); };
+
+  renderInventoryView();
+  renderInventoryList();
+  renderInventoryGrid();
+}
+
+/* ============================================================
+   ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
+   ============================================================ */
 function initTabs() {
   const sheetView = $('#sheetView');
   const treeView = $('#treeView');
+  const invView = $('#inventoryView');
   const tabSheet = $('#tabSheetBtn');
   const tabTree = $('#tabTreeBtn');
+  const tabInv = $('#tabInvBtn');
 
-  if (!tabSheet || !tabTree) return;
+  if (!tabSheet || !tabTree || !tabInv) return;
 
-  tabSheet.onclick = () => {
-    sheetView.classList.remove('hidden');
-    treeView.classList.add('hidden');
-    tabSheet.classList.add('active');
-    tabTree.classList.remove('active');
-  };
+  function switchTab(activeTab, activeView) {
+    [tabSheet, tabTree, tabInv].forEach(t => t.classList.remove('active'));
+    [sheetView, treeView, invView].forEach(v => v.classList.add('hidden'));
+    activeTab.classList.add('active');
+    activeView.classList.remove('hidden');
+  }
 
-  tabTree.onclick = () => {
-    sheetView.classList.add('hidden');
-    treeView.classList.remove('hidden');
-    tabSheet.classList.remove('active');
-    tabTree.classList.add('active');
-  };
+  tabSheet.onclick = () => switchTab(tabSheet, sheetView);
+  tabTree.onclick = () => switchTab(tabTree, treeView);
+  tabInv.onclick = () => switchTab(tabInv, invView);
 
   const closeBtn = $('#closeTreeNodeBtn');
   if(closeBtn) closeBtn.onclick = () => $('#treeNodeModal').classList.remove('open');
@@ -1359,6 +1409,7 @@ function init() {
   initToggles();
   initTabs();
   initTree();
+  initInventory();
   
   toast('☠ Лист персонажа загружен');
 }
