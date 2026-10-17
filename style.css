@@ -35,12 +35,17 @@ body {
   display: flex; justify-content: space-between; align-items: center;
   flex-wrap: wrap; gap: 12px;
 }
-.logo {
-  color: var(--green); font-size: 20px; font-weight: 700;
-  letter-spacing: 1.5px; text-shadow: 0 0 12px var(--green-glow);
-  display: flex; align-items: center; gap: 10px;
+.nav-tabs { display: flex; gap: 8px; }
+.nav-tab {
+  background: transparent; border: 1px solid var(--border); color: var(--muted);
+  padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all 0.2s; font-family: inherit; letter-spacing: 0.5px;
 }
-.logo span { color: var(--green-bright); }
+.nav-tab:hover { color: var(--green-bright); border-color: var(--green); }
+.nav-tab.active {
+  background: var(--green-dark); color: var(--green-bright);
+  border-color: var(--green); box-shadow: 0 0 12px var(--green-glow);
+}
 .actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
 /* BUTTONS */
@@ -390,7 +395,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
 }
 .slot-send-btn:hover { background: rgba(74, 222, 128, 0.1); }
 
-/* BAGS */
+/* BAGS (ИНВЕНТАРЬ) */
 .bag {
   background: var(--panel-2); border: 1px solid var(--border);
   border-left: 3px solid var(--green); border-radius: 10px;
@@ -442,6 +447,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
 
 /* COLLAPSED */
 .collapsed { display: none !important; }
+.hidden { display: none !important; }
 
 /* MODAL */
 .modal {
@@ -552,86 +558,4 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .combat-grid { grid-template-columns: 1fr; }
   .character-panel { grid-template-columns: 1fr !important; }
   .sub-item { grid-template-columns: 1fr; }
-}
-
-/* ============================================================
-   НОВЫЕ СТИЛИ ДЛЯ ВКЛАДОК И ДРЕВА
-   ============================================================ */
-.nav-tabs { display: flex; gap: 8px; }
-.nav-tab {
-  background: transparent; border: 1px solid var(--border); color: var(--muted);
-  padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 700;
-  cursor: pointer; transition: all 0.2s; font-family: inherit; letter-spacing: 0.5px;
-}
-.nav-tab:hover { color: var(--green-bright); border-color: var(--green); }
-.nav-tab.active {
-  background: var(--green-dark); color: var(--green-bright);
-  border-color: var(--green); box-shadow: 0 0 12px var(--green-glow);
-}
-.hidden { display: none !important; }
-
-.tree-view { display: flex; flex-direction: column; height: calc(100vh - 80px); overflow: hidden; }
-.tree-controls {
-  display: flex; gap: 10px; padding: 10px 24px;
-  background: var(--panel); border-bottom: 1px solid var(--green-dark);
-  align-items: center; z-index: 10;
-}
-.tree-hint { color: var(--muted); font-size: 13px; font-style: italic; margin-left: 10px; }
-.tree-canvas-wrapper {
-  flex: 1; overflow: hidden; position: relative;
-  background: radial-gradient(circle at 50% 50%, #0a0f0a 0%, #050705 100%);
-  cursor: grab;
-}
-.tree-canvas-wrapper:active { cursor: grabbing; }
-.tree-canvas {
-  position: absolute; top: 0; left: 0;
-  width: 15000px; height: 4000px;
-  transform-origin: 0 0;
-}
-.tree-lines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
-.tree-node {
-  position: absolute; width: 200px; min-height: 90px;
-  background: var(--panel-2); border: 1px solid var(--border);
-  border-left: 4px solid var(--green); border-radius: 8px;
-  padding: 10px; cursor: pointer; transition: all 0.2s; z-index: 2;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-  user-select: none; -webkit-user-select: none;
-}
-.tree-node:hover { border-color: var(--green); box-shadow: 0 0 15px var(--green-glow); transform: scale(1.02); }
-.tree-node.class { border-left-color: var(--gold); background: #1a1f1a; }
-.tree-node.subclass { border-left-color: var(--green); }
-.tree-node.sub-subclass { border-left-color: #3b82f6; }
-.tree-node.skill { border-left-color: #a855f7; }
-.tree-node.token { border-left-color: var(--gold); background: #1a1f1a; }
-.node-title { font-weight: 800; color: var(--green-bright); font-size: 14px; margin-bottom: 4px; }
-.node-type { font-size: 10px; text-transform: uppercase; color: var(--muted); letter-spacing: 1px; }
-.node-cost { font-size: 11px; color: var(--gold); margin-top: 4px; font-weight: 700; }
-
-/* ============================================================
-   СТИЛИ ДЛЯ ОБЩЕГО ИНВЕНТАРЯ
-   ============================================================ */
-#invListContainer table tr:hover {
-  background: rgba(74, 222, 128, 0.05);
-}
-#invListContainer table input {
-  background: transparent;
-  border: 1px solid transparent;
-  color: var(--text);
-  width: 100%;
-  padding: 6px;
-  font-size: 14px;
-}
-#invListContainer table input:focus {
-  background: #0a0f0a;
-  border: 1px solid var(--green);
-  outline: none;
-}
-
-.inv-grid-cell {
-  transition: all 0.2s;
-}
-.inv-grid-cell:hover {
-  border-color: var(--green) !important;
-  box-shadow: 0 0 10px var(--green-glow);
-  transform: scale(1.05);
 }
