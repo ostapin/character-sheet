@@ -11,7 +11,6 @@
 <header class="topbar">
   <div class="nav-tabs">
     <button class="nav-tab active" id="tabSheetBtn">📜 Лист персонажа</button>
-    <button class="nav-tab" id="tabTreeBtn">🌳 Древо прокачки</button>
     <button class="nav-tab" id="tabInvBtn">🎒 Инвентарь</button>
   </div>
   <div class="actions">
@@ -138,17 +137,6 @@
     <button class="btn btn-add" id="addPassiveBtn">+ Добавить пассивный навык</button>
   </section>
 
-  <!-- Старый инвентарь (Сумки) оставил на всякий случай, если захочешь использовать -->
-  <section class="card card-wide">
-    <div class="section-header">
-      <h2>Сумки (Лист)</h2>
-      <button class="btn-toggle" data-target="bagContainer">▾ Скрыть</button>
-    </div>
-    <div id="bagContainer"></div>
-    <button class="btn btn-add" id="addBagBtn">+ Создать сумку</button>
-    <div class="total-weight">Общий вес: <span id="totalWeight">0</span></div>
-  </section>
-
   <section class="card card-wide">
     <div class="section-header">
       <h2>Снаряжение (надето)</h2>
@@ -179,54 +167,16 @@
 
 </main>
 
-<!-- ================= ВКЛАДКА: ДРЕВО ПРОКАЧКИ ================= -->
-<div id="treeView" class="tree-view hidden">
-  <div class="tree-controls">
-    <button class="btn" id="zoomIn">➕ Приблизить</button>
-    <button class="btn" id="zoomOut">➖ Отдалить</button>
-    <button class="btn" id="zoomReset">🔄 Сброс</button>
-    <span class="tree-hint">Зажми ЛКМ и тяни, чтобы двигать древо</span>
-  </div>
-  
-  <div class="tree-canvas-wrapper" id="treeWrapper">
-    <div class="tree-canvas" id="treeCanvas">
-      <svg id="treeLines" class="tree-lines"></svg>
-      <div id="treeNodes"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ================= ВКЛАДКА: ОБЩИЙ ИНВЕНТАРЬ ================= -->
+<!-- ================= ВКЛАДКА: ИНВЕНТАРЬ ================= -->
 <div id="inventoryView" class="hidden" style="padding: 24px; height: calc(100vh - 80px); overflow-y: auto;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-    <h2 style="color: var(--green); text-transform: uppercase; letter-spacing: 1.5px;">Общий инвентарь</h2>
-    <div>
-      <button class="btn btn-green" id="invViewListBtn">📋 Список</button>
-      <button class="btn" id="invViewGridBtn">🔲 Ячейки</button>
+  <section class="card card-wide">
+    <div class="section-header">
+      <h2>Инвентарь</h2>
     </div>
-  </div>
-  
-  <!-- Вид: Список -->
-  <div id="invListContainer">
-    <table class="inv-table" style="width: 100%; border-collapse: collapse;">
-      <thead>
-        <tr style="border-bottom: 1px solid var(--border); text-align: left; color: var(--muted);">
-          <th style="padding: 8px;">Предмет</th>
-          <th style="padding: 8px; width: 80px;">Кол-во</th>
-          <th style="padding: 8px; width: 80px;">Вес</th>
-          <th style="padding: 8px; width: 40px;"></th>
-        </tr>
-      </thead>
-      <tbody id="invListBody"></tbody>
-    </table>
-    <button class="btn btn-add" id="addInvListItemBtn" style="margin-top: 15px;">+ Добавить предмет в список</button>
-  </div>
-
-  <!-- Вид: Ячейки -->
-  <div id="invGridContainer" class="hidden">
-    <div id="invGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px;"></div>
-    <button class="btn btn-add" id="addInvGridItemBtn" style="margin-top: 15px;">+ Добавить пустую ячейку</button>
-  </div>
+    <div id="bagContainer"></div>
+    <button class="btn btn-add" id="addBagBtn">+ Создать сумку</button>
+    <div class="total-weight">Общий вес: <span id="totalWeight">0</span></div>
+  </section>
 </div>
 
 <footer class="footer"><span>Лист персонажа · Абсолютный Мир</span></footer>
@@ -252,19 +202,8 @@
   </div>
 </div>
 
-<div class="modal" id="treeNodeModal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h2 id="treeNodeTitle">Название</h2>
-      <button class="modal-close" id="closeTreeNodeBtn">✖</button>
-    </div>
-    <div class="modal-body" id="treeNodeBody"></div>
-  </div>
-</div>
-
 <div id="toast" class="toast"></div>
 
-<script src="data.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
