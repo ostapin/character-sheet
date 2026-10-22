@@ -1,5 +1,5 @@
 /* ============================================================
-   ЛИСТ ПЕРСОНАЖА — вся логика v5 (с общим инвентарем)
+   ЛИСТ ПЕРСОНАЖА — вся логика v5.1 (с сохранением)
    ============================================================ */
 
 const STORAGE_KEY = 'absolute_world_character_v5';
@@ -82,6 +82,7 @@ function toast(msg) {
 function renderSkills() {
   Object.entries(SKILLS).forEach(([group, list]) => {
     const box = document.querySelector(`[data-group="${group}"]`);
+    if(!box) return;
     box.innerHTML = list.map(s => `
       <div class="skill-row">
         <label>${s.label}</label>
@@ -894,7 +895,7 @@ function collectData() {
     fields: {}, skills: {}, subclasses: [],
     spells: [], effects: [], actives: [], passives: [], equip: [],
     bags: [], sharedBags: [], slots: {}, faith: [],
-    photo: $('#photoImg').src && $('#photoImg').src.startsWith('data:') ? $('#photoImg').src : ''
+    photo: $('#photoImg') && $('#photoImg').src && $('#photoImg').src.startsWith('data:') ? $('#photoImg').src : ''
   };
   $$('[data-key]').forEach(el => data.fields[el.dataset.key] = el.value);
   $$('[data-skill]').forEach(el => data.skills[el.dataset.skill] = el.value);
