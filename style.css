@@ -639,3 +639,4 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .combat-grid { grid-template-columns: 1fr; }
   .combat-list { max-height: 300px; }
 }
+
