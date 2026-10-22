@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Лист персонажа — Хань Фу</title>
   
-  <!-- АВТО-ОБНОВЛЕНИЕ КЭША -->
   <script>
     const v = Date.now();
     document.write(`<link rel="stylesheet" href="style.css?v=${v}">`);
@@ -23,8 +22,6 @@
     <button id="exportBtn" class="btn">⬇ Экспорт</button>
     <button id="importBtn" class="btn">⬆ Импорт</button>
     <input type="file" id="importFile" accept=".json" hidden>
-    <button id="combatBtn" class="btn btn-combat">⚔ Бой</button>
-    <button id="resetBtn" class="btn btn-danger">✖ Сброс</button>
   </div>
 </header>
 
@@ -177,6 +174,15 @@
     <div id="faithThresholds"></div>
     <button class="btn btn-add" id="addFaithBtn">+ Добавить порог</button>
   </section>
+
+  <!-- ПЕРЕНЕСЕННЫЕ КНОПКИ БОЙ И СБРОС -->
+  <section class="card card-wide" style="text-align: center; margin-top: 10px;">
+    <div style="display: flex; gap: 10px; justify-content: center; max-width: 600px; margin: 0 auto;">
+      <button id="combatBtn" class="btn btn-combat" style="flex: 1; padding: 12px; font-size: 15px;">⚔ Бой</button>
+      <button id="resetBtn" class="btn btn-danger" style="flex: 1; padding: 12px; font-size: 15px;">✖ Сброс</button>
+    </div>
+  </section>
+
 </main>
 
 <div id="inventoryView" class="hidden" style="padding: 24px; height: calc(100vh - 80px); overflow-y: auto; max-width: 1500px; margin: 0 auto;">
@@ -214,12 +220,10 @@
 
 <div id="toast" class="toast"></div>
 
-<!-- АВТО-ОБНОВЛЕНИЕ КЭША ДЛЯ СКРИПТА -->
 <script>
   document.write(`<script src="script.js?v=${v}"><\/script>`);
 </script>
 
-<!-- Firebase SDK -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
