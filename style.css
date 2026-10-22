@@ -562,13 +562,12 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .nav-tabs { justify-content: center; }
   .nav-tab { flex: 1; text-align: center; padding: 8px 10px; font-size: 13px; }
   
-  /* Кнопки Сохранить/Экспорт/Импорт в 3 колонки */
   .actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
   .actions .btn { padding: 8px 4px; font-size: 12px; }
 
-  /* Сетка контента */
-  .grid { padding: 0 10px; margin: 10px auto; gap: 10px; }
-  .card { padding: 12px 14px; }
+  /* Сетка контента - РАСШИРЯЕМ ДО КРАЕВ */
+  .grid { padding: 0 6px; margin: 10px auto; gap: 8px; }
+  .card { padding: 10px; }
 
   /* Персонаж */
   .character-panel { grid-template-columns: 1fr !important; }
@@ -581,14 +580,14 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .skill-columns { grid-template-columns: 1fr; }
 
   /* Ячейки заклинаний */
-  .slot { min-width: 85vw; width: 85vw; padding: 8px; }
-  .slot-img-box { min-height: 300px; }
-  .arrow { height: 60px; width: 30px; font-size: 18px; }
-  .slots-strip { gap: 8px; }
+  .slot { min-width: 92vw; width: 92vw; padding: 6px; }
+  .slot-img-box { min-height: 250px; }
+  .arrow { height: 50px; width: 25px; font-size: 16px; }
+  .slots-strip { gap: 6px; }
 
   /* Карточки списков (Заклинания, Эффекты) */
-  .list-card { grid-template-columns: 1fr; padding: 10px; gap: 10px; }
-  .list-card .card-img-box { min-height: 200px; }
+  .list-card { grid-template-columns: 1fr; padding: 8px; gap: 8px; }
+  .list-card .card-img-box { min-height: 180px; }
   .list-card .list-del { justify-self: end; }
 
   /* Бонусы */
@@ -607,16 +606,20 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     align-items: center;
   }
   
+  /* Номер шире */
   .bag-item-main .i-num { 
-    width: 45px; 
+    width: 60px; 
     flex: none;
+    text-align: center;
   }
   
+  /* Название */
   .bag-item-main .i-name { 
     flex: 1; 
-    min-width: 120px;
+    min-width: 100px;
   }
   
+  /* Кол-во и Вес */
   .bag-item-main .i-qty { 
     width: calc(50% - 3px);
   }
@@ -624,32 +627,37 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     width: calc(50% - 3px);
   }
   
+  /* Описание на всю ширину */
   .bag-item-main .i-desc { 
     width: 100%;
     margin-top: 4px;
   }
   
+  /* Кнопка удаления - аккуратный крестик в углу */
   .bag-item-main .item-del { 
-    width: 100%;
-    text-align: right;
-    margin-top: 4px;
-    background: rgba(185, 28, 28, 0.1);
-    padding: 6px 10px;
-    border-radius: 6px;
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: transparent;
     color: #ef4444;
+    font-size: 18px;
+    padding: 4px;
+    border: none;
   }
+  .bag-item { position: relative; } /* Чтобы крестик привязался к карточке */
 
   .bag-item-toggle {
     width: 100%;
     text-align: left;
-    padding: 6px 0;
+    padding: 4px 0;
     background: transparent;
     border: none;
+    margin-top: 4px;
   }
   
   /* Подпункты в сумках */
-  .sub-items { margin-left: 0; padding: 8px; }
-  .sub-item { grid-template-columns: 1fr 60px; gap: 6px; }
+  .sub-items { margin-left: 0; padding: 6px; }
+  .sub-item { grid-template-columns: 1fr 50px; gap: 4px; }
   .sub-item .s-name { grid-column: 1; grid-row: 1; }
   .sub-item .s-qty { grid-column: 2; grid-row: 1; }
   .sub-item .s-desc { grid-column: 1 / span 2; grid-row: 2; }
