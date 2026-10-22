@@ -561,9 +561,10 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .topbar { padding: 10px 12px; flex-direction: column; align-items: stretch; gap: 10px; }
   .nav-tabs { justify-content: center; }
   .nav-tab { flex: 1; text-align: center; padding: 8px 10px; font-size: 13px; }
+  
+  /* Кнопки Сохранить/Экспорт/Импорт в 3 колонки */
   .actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
   .actions .btn { padding: 8px 4px; font-size: 12px; }
-  .actions .btn-combat, .actions .btn-danger { grid-column: span 3; }
 
   /* Сетка контента */
   .grid { padding: 0 10px; margin: 10px auto; gap: 10px; }
@@ -594,34 +595,56 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .bonus-row { grid-template-columns: 1fr 1fr; gap: 6px; }
   .bonus-row .bonus-del { grid-column: span 2; justify-self: end; padding: 4px 10px; background: rgba(185, 28, 28, 0.1); border-radius: 4px; }
 
-  /* ИНВЕНТАРЬ (СУМКИ) - ИСПРАВЛЕННЫЙ БЛОК */
+  /* ИНВЕНТАРЬ (СУМКИ) - АККУРАТНАЯ СТОПКА */
   .bag-header { flex-wrap: wrap; }
   .bag-header input { width: 100%; flex: none; margin-bottom: 6px; }
   .bag-info { width: 100%; display: flex; justify-content: space-between; }
   
-  /* Поля предмета в сумке: 2 колонки */
   .bag-item-main { 
-    grid-template-columns: 1fr 1fr; 
+    display: flex !important;
+    flex-wrap: wrap;
     gap: 6px; 
     align-items: center;
   }
-  /* Номер и Название */
-  .bag-item-main .i-num { grid-column: 1; grid-row: 1; }
-  .bag-item-main .i-name { grid-column: 2; grid-row: 1; }
-  /* Кол-во и Вес */
-  .bag-item-main .i-qty { grid-column: 1; grid-row: 2; }
-  .bag-item-main .i-weight { grid-column: 2; grid-row: 2; }
-  /* Описание (на всю ширину) */
-  .bag-item-main .i-desc { grid-column: 1 / span 2; grid-row: 3; }
-  /* Кнопка удаления крестик */
+  
+  .bag-item-main .i-num { 
+    width: 45px; 
+    flex: none;
+  }
+  
+  .bag-item-main .i-name { 
+    flex: 1; 
+    min-width: 120px;
+  }
+  
+  .bag-item-main .i-qty { 
+    width: calc(50% - 3px);
+  }
+  .bag-item-main .i-weight { 
+    width: calc(50% - 3px);
+  }
+  
+  .bag-item-main .i-desc { 
+    width: 100%;
+    margin-top: 4px;
+  }
+  
   .bag-item-main .item-del { 
-    grid-column: 1 / span 2; 
-    grid-row: 4; 
-    justify-self: end; 
-    font-size: 14px; 
-    padding: 4px 8px; 
-    background: rgba(185,28,28,0.1); 
-    border-radius: 4px; 
+    width: 100%;
+    text-align: right;
+    margin-top: 4px;
+    background: rgba(185, 28, 28, 0.1);
+    padding: 6px 10px;
+    border-radius: 6px;
+    color: #ef4444;
+  }
+
+  .bag-item-toggle {
+    width: 100%;
+    text-align: left;
+    padding: 6px 0;
+    background: transparent;
+    border: none;
   }
   
   /* Подпункты в сумках */
@@ -639,4 +662,3 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .combat-grid { grid-template-columns: 1fr; }
   .combat-list { max-height: 300px; }
 }
-
