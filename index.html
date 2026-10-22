@@ -182,7 +182,7 @@
 <div id="inventoryView" class="hidden" style="padding: 24px; height: calc(100vh - 80px); overflow-y: auto; max-width: 1500px; margin: 0 auto;">
   <section class="card card-wide">
     <div class="section-header">
-      <h2>Общий инвентарь</h2>
+      <h2>Общий инвентарь <span id="sharedSyncStatus" style="font-size:12px;color:var(--gold);margin-left:10px">(Подключение к облаку...)</span></h2>
     </div>
     <div id="sharedBagContainer"></div>
     <button class="btn btn-add" id="addSharedBagBtn">+ Создать сумку</button>
@@ -215,6 +215,28 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="script.js"></script>
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyC8JYraZCkxZd-pmFHoxvAfl2TNdPuv1xY",
+    authDomain: "absolute-world-inventory.firebaseapp.com",
+    projectId: "absolute-world-inventory",
+    storageBucket: "absolute-world-inventory.firebasestorage.app",
+    messagingSenderId: "825317933937",
+    appId: "1:825317933937:web:bf565cfefaa49fd1dd2cd0"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  
+  // Делаем доступным для основного скрипта
+  window.db = db;
+  
+  // Загружаем основной скрипт как модуль
+  import('./script.js');
+</script>
 </body>
 </html>
