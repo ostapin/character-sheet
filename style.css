@@ -585,7 +585,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .arrow { height: 60px; width: 30px; font-size: 18px; }
   .slots-strip { gap: 8px; }
 
-  /* Карточки списков */
+  /* Карточки списков (Заклинания, Эффекты) */
   .list-card { grid-template-columns: 1fr; padding: 10px; gap: 10px; }
   .list-card .card-img-box { min-height: 200px; }
   .list-card .list-del { justify-self: end; }
@@ -594,19 +594,38 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .bonus-row { grid-template-columns: 1fr 1fr; gap: 6px; }
   .bonus-row .bonus-del { grid-column: span 2; justify-self: end; padding: 4px 10px; background: rgba(185, 28, 28, 0.1); border-radius: 4px; }
 
-  /* Инвентарь */
+  /* ИНВЕНТАРЬ (СУМКИ) - ИСПРАВЛЕННЫЙ БЛОК */
   .bag-header { flex-wrap: wrap; }
-  .bag-header input { width: 100%; flex: none; }
+  .bag-header input { width: 100%; flex: none; margin-bottom: 6px; }
   .bag-info { width: 100%; display: flex; justify-content: space-between; }
-  .bag-item-main { grid-template-columns: 40px 1fr 60px; gap: 6px; }
+  
+  /* Поля предмета в сумке: 2 колонки */
+  .bag-item-main { 
+    grid-template-columns: 1fr 1fr; 
+    gap: 6px; 
+    align-items: center;
+  }
+  /* Номер и Название */
   .bag-item-main .i-num { grid-column: 1; grid-row: 1; }
   .bag-item-main .i-name { grid-column: 2; grid-row: 1; }
-  .bag-item-main .i-qty { grid-column: 3; grid-row: 1; }
-  .bag-item-main .i-desc { grid-column: 1 / span 2; grid-row: 2; }
-  .bag-item-main .i-weight { grid-column: 3; grid-row: 2; }
-  .bag-item-main .item-del { grid-column: 1 / span 3; grid-row: 3; justify-self: end; font-size: 14px; padding: 4px 8px; }
+  /* Кол-во и Вес */
+  .bag-item-main .i-qty { grid-column: 1; grid-row: 2; }
+  .bag-item-main .i-weight { grid-column: 2; grid-row: 2; }
+  /* Описание (на всю ширину) */
+  .bag-item-main .i-desc { grid-column: 1 / span 2; grid-row: 3; }
+  /* Кнопка удаления крестик */
+  .bag-item-main .item-del { 
+    grid-column: 1 / span 2; 
+    grid-row: 4; 
+    justify-self: end; 
+    font-size: 14px; 
+    padding: 4px 8px; 
+    background: rgba(185,28,28,0.1); 
+    border-radius: 4px; 
+  }
   
-  .sub-items { margin-left: 10px; padding: 8px; }
+  /* Подпункты в сумках */
+  .sub-items { margin-left: 0; padding: 8px; }
   .sub-item { grid-template-columns: 1fr 60px; gap: 6px; }
   .sub-item .s-name { grid-column: 1; grid-row: 1; }
   .sub-item .s-qty { grid-column: 2; grid-row: 1; }
