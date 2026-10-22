@@ -1,10 +1,103 @@
 /* ============================================================
-   ЛИСТ ПЕРСОНАЖА — вся логика v5.1 (с сохранением)
+   ЛИСТ ПЕРСОНАЖА — вся логика v5.2 (с синхронизацией Firebase)
    ============================================================ */
 
 const STORAGE_KEY = 'absolute_world_character_v5';
 const SLOTS_CONFIG = { 1: 8, 2: 7, 3: 6, 4: 5, 5: 4 };
 const FOCUS_SLOTS = 2;
+
+// ================= FIREBASE =================
+import { doc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+let cloudSharedBags = []; // Локальная копия облачных сумок
+let isCloudLoading = false;
+
+// Ссылка на документ в базе данных
+const inventoryDocRef = doc(window.db, "inventories", "shared");
+
+// Функция отправки данных в облако
+async function saveSharedToCloud() {
+    if (isCloudLoading) return; // Не перезаписываем, пока идет загрузка
+    try {
+        // Собираем данные из облачных сумок
+        const bagsData = [];
+        $$('#sharedBagContainer .bag').forEach(bag => {
+            const items = [];
+            bag.querySelectorAll('.bag-item').forEach(r => {
+                const subs = [];
+                r.querySelectorAll('.sub-item').forEach(s => {
+                    subs.push({
+                        name: s.querySelector('.s-name').value,
+                        qty: s.querySelector('.s-qty').value,
+                        desc: s.querySelector('.s-desc').value
+                    });
+                });
+                items.push({
+                    num: r.querySelector('.i-num').value,
+                    name: r.querySelector('.i-name').value,
+                    desc: r.querySelector('.i-desc').value,
+                    qty: r.querySelector('.i-qty').value,
+                    weight: r.querySelector('.i-weight').value,
+                    subs
+                });
+            });
+            bagsData.push({ name: bag.querySelector('.bag-name').value, items });
+        });
+
+        await setDoc(inventoryDocRef, { bags: bagsData });
+        console.log("Общий инвентарь сохранен в облако.");
+    } catch (error) {
+        console.error("Ошибка сохранения в облако: ", error);
+        toast('Ошибка сохранения в облако');
+    }
+}
+
+// Функция перерисовки облачных сумок при получении данных
+function renderSharedBags(bags) {
+    const container = $('#sharedBagContainer');
+    container.innerHTML = '';
+    (bags || []).forEach(b => {
+        container.appendChild(createBag(b, updateSharedTotalWeight, true));
+    });
+    updateSharedTotalWeight();
+}
+
+// Подключение к Firebase
+function initFirebaseSync() {
+    const statusEl = $('#sharedSyncStatus');
+    
+    onSnapshot(inventoryDocRef, (docSnap) => {
+        if (statusEl) statusEl.textContent = "(Онлайн)";
+        if (statusEl) statusEl.style.color = "var(--green)";
+        
+        if (docSnap.exists()) {
+            isCloudLoading = true;
+            cloudSharedBags = docSnap.data().bags || [];
+            
+            // Проверяем, не в фокусе ли сейчас какое-то поле ввода в общем инвентаре
+            // Чтобы не сбивать ввод, если пришло обновление от другого игрока
+            const activeEl = document.activeElement;
+            const isTypingInShared = activeEl && activeEl.closest('#sharedBagContainer');
+
+            if (!isTypingInShared) {
+                renderSharedBags(cloudSharedBags);
+            } else {
+                // Если игрок печатает, просто обновим локальную копию, а рендер отложим
+                console.log("Ввод в процессе, обновление рендера отложено.");
+            }
+            
+            setTimeout(() => { isCloudLoading = false; }, 100);
+        } else {
+            // Если документа нет, создаем его пустым
+            setDoc(inventoryDocRef, { bags: [] });
+        }
+    }, (error) => {
+        console.error("Ошибка подписки на облако:", error);
+        if (statusEl) statusEl.textContent = "(Офлайн)";
+        if (statusEl) statusEl.style.color = "var(--danger)";
+    });
+}
+
 
 const SKILLS = {
   mind: [
@@ -286,7 +379,7 @@ function createSubclass(data = {}) {
 /* ============================================================
    СУМКИ (ИНВЕНТАРЬ)
    ============================================================ */
-function createBag(data = {}, onUpdate = () => {}) {
+function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
   const div = document.createElement('div');
   div.className = 'bag';
   div.innerHTML = `
@@ -299,6 +392,12 @@ function createBag(data = {}, onUpdate = () => {}) {
     <button class="btn btn-add bag-add">+ Добавить предмет</button>
   `;
   const itemsBox = div.querySelector('.bag-items');
+
+  // Функция вызова обновления (локальная или облачная)
+  const triggerUpdate = () => {
+    onUpdate();
+    if (isCloud) saveSharedToCloud();
+  };
 
   function addItem(item = {}) {
     const row = document.createElement('div');
@@ -328,8 +427,8 @@ function createBag(data = {}, onUpdate = () => {}) {
         <input type="text" class="s-desc" placeholder="Описание" value="${si.desc || ''}">
         <button class="sub-item-del">✖</button>
       `;
-      s.querySelector('.sub-item-del').onclick = () => { s.remove(); autoSave(); onUpdate(); };
-      s.querySelectorAll('input').forEach(el => el.addEventListener('input', autoSave));
+      s.querySelector('.sub-item-del').onclick = () => { s.remove(); autoSave(); triggerUpdate(); };
+      s.querySelectorAll('input').forEach(el => el.addEventListener('input', () => { autoSave(); triggerUpdate(); }));
       subBox.appendChild(s);
     }
 
@@ -345,7 +444,7 @@ function createBag(data = {}, onUpdate = () => {}) {
       addSubBtn.style.alignSelf = 'flex-start';
       addSubBtn.style.marginTop = '4px';
       addSubBtn.textContent = '+ подпункт';
-      addSubBtn.onclick = () => { addSubItem(); autoSave(); onUpdate(); };
+      addSubBtn.onclick = () => { addSubItem(); autoSave(); triggerUpdate(); };
       subBox.appendChild(addSubBtn);
     }
 
@@ -357,8 +456,8 @@ function createBag(data = {}, onUpdate = () => {}) {
       if (open) ensureAddBtn();
     };
 
-    row.querySelector('.item-del').onclick = () => { row.remove(); updateBagStats(); autoSave(); onUpdate(); };
-    row.querySelectorAll('.bag-item-main input').forEach(el => el.addEventListener('input', () => { updateBagStats(); autoSave(); onUpdate(); }));
+    row.querySelector('.item-del').onclick = () => { row.remove(); updateBagStats(); autoSave(); triggerUpdate(); };
+    row.querySelectorAll('.bag-item-main input').forEach(el => el.addEventListener('input', () => { updateBagStats(); autoSave(); triggerUpdate(); }));
 
     itemsBox.appendChild(row);
   }
@@ -379,9 +478,9 @@ function createBag(data = {}, onUpdate = () => {}) {
   if (data.name) div.querySelector('.bag-name').value = data.name;
   (data.items || []).forEach(addItem);
 
-  div.querySelector('.bag-add').onclick = () => { addItem(); autoSave(); onUpdate(); };
-  div.querySelector('.bag-del').onclick = () => { div.remove(); onUpdate(); autoSave(); };
-  div.querySelector('.bag-name').addEventListener('input', autoSave);
+  div.querySelector('.bag-add').onclick = () => { addItem(); autoSave(); triggerUpdate(); };
+  div.querySelector('.bag-del').onclick = () => { div.remove(); triggerUpdate(); autoSave(); };
+  div.querySelector('.bag-name').addEventListener('input', () => { autoSave(); if(isCloud) saveSharedToCloud(); });
 
   div._updateStats = updateBagStats;
   updateBagStats();
@@ -894,7 +993,7 @@ function collectData() {
   const data = {
     fields: {}, skills: {}, subclasses: [],
     spells: [], effects: [], actives: [], passives: [], equip: [],
-    bags: [], sharedBags: [], slots: {}, faith: [],
+    bags: [], slots: {}, faith: [],
     photo: $('#photoImg') && $('#photoImg').src && $('#photoImg').src.startsWith('data:') ? $('#photoImg').src : ''
   };
   $$('[data-key]').forEach(el => data.fields[el.dataset.key] = el.value);
@@ -951,30 +1050,6 @@ function collectData() {
     data.bags.push({ name: bag.querySelector('.bag-name').value, items });
   });
 
-  // Общий инвентарь
-  $$('#sharedBagContainer .bag').forEach(bag => {
-    const items = [];
-    bag.querySelectorAll('.bag-item').forEach(r => {
-      const subs = [];
-      r.querySelectorAll('.sub-item').forEach(s => {
-        subs.push({
-          name: s.querySelector('.s-name').value,
-          qty: s.querySelector('.s-qty').value,
-          desc: s.querySelector('.s-desc').value
-        });
-      });
-      items.push({
-        num: r.querySelector('.i-num').value,
-        name: r.querySelector('.i-name').value,
-        desc: r.querySelector('.i-desc').value,
-        qty: r.querySelector('.i-qty').value,
-        weight: r.querySelector('.i-weight').value,
-        subs
-      });
-    });
-    data.sharedBags.push({ name: bag.querySelector('.bag-name').value, items });
-  });
-
   $$('.slot').forEach(slot => {
     const img = slot.querySelector('img');
     if (img && img.src && img.src.startsWith('data:')) {
@@ -1027,10 +1102,7 @@ function applyData(d) {
   fill('equipList', 'equip', d.equip);
 
   $('#bagContainer').innerHTML = '';
-  (d.bags || []).forEach(b => $('#bagContainer').appendChild(createBag(b, updateTotalWeight)));
-
-  $('#sharedBagContainer').innerHTML = '';
-  (d.sharedBags || []).forEach(b => $('#sharedBagContainer').appendChild(createBag(b, updateSharedTotalWeight)));
+  (d.bags || []).forEach(b => $('#bagContainer').appendChild(createBag(b, updateTotalWeight, false)));
 
   if (d.slots) {
     Object.entries(d.slots).forEach(([slotId, src]) => {
@@ -1076,6 +1148,31 @@ function loadFromStorage() {
 
 function exportJSON() {
   const data = collectData();
+  // Добавим общий инвентарь в экспорт, чтобы можно было его сохранить локально
+  data.sharedBags = [];
+  $$('#sharedBagContainer .bag').forEach(bag => {
+      const items = [];
+      bag.querySelectorAll('.bag-item').forEach(r => {
+        const subs = [];
+        r.querySelectorAll('.sub-item').forEach(s => {
+          subs.push({
+            name: s.querySelector('.s-name').value,
+            qty: s.querySelector('.s-qty').value,
+            desc: s.querySelector('.s-desc').value
+          });
+        });
+        items.push({
+          num: r.querySelector('.i-num').value,
+          name: r.querySelector('.i-name').value,
+          desc: r.querySelector('.i-desc').value,
+          qty: r.querySelector('.i-qty').value,
+          weight: r.querySelector('.i-weight').value,
+          subs
+        });
+      });
+      data.sharedBags.push({ name: bag.querySelector('.bag-name').value, items });
+  });
+
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -1090,7 +1187,13 @@ function importJSON(file) {
   const reader = new FileReader();
   reader.onload = e => {
     try {
-      applyData(JSON.parse(e.target.result));
+      const data = JSON.parse(e.target.result);
+      applyData(data);
+      if (data.sharedBags && data.sharedBags.length > 0) {
+          // Если в импортируемом файле есть общий инвентарь, загружаем его в облако
+          renderSharedBags(data.sharedBags);
+          saveSharedToCloud();
+      }
       saveNow();
       toast('⬆ Импортировано');
     } catch (err) { toast('✖ Ошибка файла'); }
@@ -1099,10 +1202,10 @@ function importJSON(file) {
 }
 
 function resetAll() {
-  if (!confirm('Удалить все данные персонажа?')) return;
+  if (!confirm('Удалить все данные персонажа? (Общий инвентарь не пострадает)')) return;
   localStorage.removeItem(STORAGE_KEY);
   $$('[data-key], [data-skill]').forEach(el => el.value = '');
-  ['subclassList','spellContainer','effectList','activeList','passiveList','bagContainer','sharedBagContainer','equipList','faithThresholds'].forEach(id => {
+  ['subclassList','spellContainer','effectList','activeList','passiveList','bagContainer','equipList','faithThresholds'].forEach(id => {
     const el = document.getElementById(id); if (el) el.innerHTML = '';
   });
   const img = $('#photoImg');
@@ -1113,7 +1216,6 @@ function resetAll() {
   renderSlots();
   renderFaithThresholds();
   updateTotalWeight();
-  updateSharedTotalWeight();
   recalcAll();
   toast('✖ Сброшено');
 }
@@ -1208,6 +1310,9 @@ function init() {
   renderSlots();
   renderFaithThresholds();
   loadFromStorage();
+  
+  // Запускаем синхронизацию с Firebase
+  initFirebaseSync();
 
   document.addEventListener('input', () => { autoSave(); recalcAll(); });
   document.addEventListener('change', () => { autoSave(); recalcAll(); });
@@ -1230,8 +1335,12 @@ function init() {
   $('#addActiveBtn').onclick   = () => { $('#activeList').appendChild(createListCard('active')); autoSave(); };
   $('#addPassiveBtn').onclick  = () => { $('#passiveList').appendChild(createListCard('passive')); autoSave(); };
   
-  $('#addBagBtn').onclick      = () => { $('#bagContainer').appendChild(createBag({}, updateTotalWeight)); autoSave(); };
-  $('#addSharedBagBtn').onclick = () => { $('#sharedBagContainer').appendChild(createBag({}, updateSharedTotalWeight)); autoSave(); };
+  $('#addBagBtn').onclick      = () => { $('#bagContainer').appendChild(createBag({}, updateTotalWeight, false)); autoSave(); };
+  $('#addSharedBagBtn').onclick = () => { 
+      const newBag = createBag({}, updateSharedTotalWeight, true); 
+      $('#sharedBagContainer').appendChild(newBag); 
+      saveSharedToCloud(); 
+  };
 
   $('#addEquipBtn').onclick    = () => { $('#equipList').appendChild(createListCard('equip')); autoSave(); };
   $('#addFaithBtn').onclick    = () => { $('#faithThresholds').appendChild(createFaithRow()); autoSave(); };
@@ -1241,7 +1350,8 @@ function init() {
   initToggles();
   initTabs();
   
-  toast('☠ Лист персонажа загружен');
+  toast('☠ Лист персонажа загружен (Онлайн)');
 }
 
+// Ждем загрузки DOM
 document.addEventListener('DOMContentLoaded', init);
