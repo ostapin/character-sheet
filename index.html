@@ -23,9 +23,7 @@
   </div>
 </header>
 
-<!-- ================= ВКЛАДКА: ЛИСТ ПЕРСОНАЖА ================= -->
 <main class="grid" id="sheetView">
-
   <section class="card card-wide character-panel">
     <div class="character-photo">
       <div class="photo-box" id="photoBox">
@@ -137,7 +135,6 @@
     <button class="btn btn-add" id="addPassiveBtn">+ Добавить пассивный навык</button>
   </section>
 
-  <!-- ЛИЧНЫЙ ИНВЕНТАРЬ (СУМКИ) -->
   <section class="card card-wide">
     <div class="section-header">
       <h2>Личный инвентарь</h2>
@@ -175,10 +172,8 @@
     <div id="faithThresholds"></div>
     <button class="btn btn-add" id="addFaithBtn">+ Добавить порог</button>
   </section>
-
 </main>
 
-<!-- ================= ВКЛАДКА: ОБЩИЙ ИНВЕНТАРЬ ================= -->
 <div id="inventoryView" class="hidden" style="padding: 24px; height: calc(100vh - 80px); overflow-y: auto; max-width: 1500px; margin: 0 auto;">
   <section class="card card-wide">
     <div class="section-header">
@@ -192,7 +187,6 @@
 
 <footer class="footer"><span>Лист персонажа · Абсолютный Мир</span></footer>
 
-<!-- МОДАЛКИ -->
 <div class="modal" id="combatModal">
   <div class="modal-content modal-wide">
     <div class="modal-header">
@@ -215,10 +209,10 @@
 
 <div id="toast" class="toast"></div>
 
-<!-- Firebase SDK -->
+<!-- Firebase SDK (грузится как модуль) -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyC8JYraZCkxZd-pmFHoxvAfl2TNdPuv1xY",
@@ -229,14 +223,27 @@
     appId: "1:825317933937:web:bf565cfefaa49fd1dd2cd0"
   };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+  try {
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    
+    // Передаем функции в глобальную область, чтобы обычный script.js их видел
+    window.firebaseReady = true;
+    window.firebaseDB = db;
+    window.firebaseDoc = doc;
+    window.firebaseOnSnapshot = onSnapshot;
+    window.firebaseSetDoc = setDoc;
+    
+    console.log("Firebase успешно загружен.");
+  } catch (e) {
+    console.error("Ошибка Firebase:", e);
+    window.firebaseReady = false;
+  }
   
-  // Делаем доступным для основного скрипта
-  window.db = db;
-  
-  // Загружаем основной скрипт как модуль
-  import('./script.js');
+  // После загрузки Firebase запускаем основной скрипт
+  const script = document.createElement('script');
+  script.src = 'script.js';
+  document.body.appendChild(script);
 </script>
 </body>
 </html>
