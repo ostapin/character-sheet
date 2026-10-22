@@ -1,5 +1,5 @@
 /* ============================================================
-   ЛИСТ ПЕРСОНАЖА — вся логика v5.2 (с синхронизацией Firebase)
+   ЛИСТ ПЕРСОНАЖА — вся логика v5.3 (Исправленная синхронизация)
    ============================================================ */
 
 const STORAGE_KEY = 'absolute_world_character_v5';
@@ -7,19 +7,13 @@ const SLOTS_CONFIG = { 1: 8, 2: 7, 3: 6, 4: 5, 5: 4 };
 const FOCUS_SLOTS = 2;
 
 // ================= FIREBASE =================
-import { doc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-let cloudSharedBags = []; // Локальная копия облачных сумок
+// Мы не делаем import здесь, а используем глобальные переменные, которые создал index.html
 let isCloudLoading = false;
+let inventoryDocRef = null;
 
-// Ссылка на документ в базе данных
-const inventoryDocRef = doc(window.db, "inventories", "shared");
-
-// Функция отправки данных в облако
 async function saveSharedToCloud() {
-    if (isCloudLoading) return; // Не перезаписываем, пока идет загрузка
+    if (!window.firebaseReady || isCloudLoading) return;
     try {
-        // Собираем данные из облачных сумок
         const bagsData = [];
         $$('#sharedBagContainer .bag').forEach(bag => {
             const items = [];
@@ -44,17 +38,16 @@ async function saveSharedToCloud() {
             bagsData.push({ name: bag.querySelector('.bag-name').value, items });
         });
 
-        await setDoc(inventoryDocRef, { bags: bagsData });
+        await window.firebaseSetDoc(inventoryDocRef, { bags: bagsData });
         console.log("Общий инвентарь сохранен в облако.");
     } catch (error) {
         console.error("Ошибка сохранения в облако: ", error);
-        toast('Ошибка сохранения в облако');
     }
 }
 
-// Функция перерисовки облачных сумок при получении данных
 function renderSharedBags(bags) {
     const container = $('#sharedBagContainer');
+    if (!container) return;
     container.innerHTML = '';
     (bags || []).forEach(b => {
         container.appendChild(createBag(b, updateSharedTotalWeight, true));
@@ -62,39 +55,38 @@ function renderSharedBags(bags) {
     updateSharedTotalWeight();
 }
 
-// Подключение к Firebase
 function initFirebaseSync() {
+    if (!window.firebaseReady) {
+        const statusEl = $('#sharedSyncStatus');
+        if (statusEl) {
+            statusEl.textContent = "(Облако недоступно)";
+            statusEl.style.color = "var(--danger)";
+        }
+        return;
+    }
+
     const statusEl = $('#sharedSyncStatus');
-    
-    onSnapshot(inventoryDocRef, (docSnap) => {
-        if (statusEl) statusEl.textContent = "(Онлайн)";
-        if (statusEl) statusEl.style.color = "var(--green)";
+    inventoryDocRef = window.firebaseDoc(window.firebaseDB, "inventories", "shared");
+
+    window.firebaseOnSnapshot(inventoryDocRef, (docSnap) => {
+        if (statusEl) { statusEl.textContent = "(Онлайн)"; statusEl.style.color = "var(--green)"; }
         
         if (docSnap.exists()) {
             isCloudLoading = true;
-            cloudSharedBags = docSnap.data().bags || [];
-            
-            // Проверяем, не в фокусе ли сейчас какое-то поле ввода в общем инвентаре
-            // Чтобы не сбивать ввод, если пришло обновление от другого игрока
+            const cloudBags = docSnap.data().bags || [];
             const activeEl = document.activeElement;
             const isTypingInShared = activeEl && activeEl.closest('#sharedBagContainer');
 
             if (!isTypingInShared) {
-                renderSharedBags(cloudSharedBags);
-            } else {
-                // Если игрок печатает, просто обновим локальную копию, а рендер отложим
-                console.log("Ввод в процессе, обновление рендера отложено.");
+                renderSharedBags(cloudBags);
             }
-            
             setTimeout(() => { isCloudLoading = false; }, 100);
         } else {
-            // Если документа нет, создаем его пустым
-            setDoc(inventoryDocRef, { bags: [] });
+            window.firebaseSetDoc(inventoryDocRef, { bags: [] });
         }
     }, (error) => {
         console.error("Ошибка подписки на облако:", error);
-        if (statusEl) statusEl.textContent = "(Офлайн)";
-        if (statusEl) statusEl.style.color = "var(--danger)";
+        if (statusEl) { statusEl.textContent = "(Офлайн)"; statusEl.style.color = "var(--danger)"; }
     });
 }
 
@@ -393,7 +385,6 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
   `;
   const itemsBox = div.querySelector('.bag-items');
 
-  // Функция вызова обновления (локальная или облачная)
   const triggerUpdate = () => {
     onUpdate();
     if (isCloud) saveSharedToCloud();
@@ -510,6 +501,7 @@ function updateSharedTotalWeight() {
    ============================================================ */
 function renderSlots() {
   const box = $('#slotsContainer');
+  if (!box) return;
   box.innerHTML = '';
 
   const focusBlock = document.createElement('div');
@@ -786,6 +778,7 @@ function createFaithRow(data = {}) {
 
 function renderFaithThresholds(initial) {
   const box = $('#faithThresholds');
+  if (!box) return;
   box.innerHTML = '';
   (initial || DEFAULT_FAITH).forEach(t => box.appendChild(createFaithRow(t)));
 }
@@ -1026,7 +1019,6 @@ function collectData() {
   collectList('passiveList', 'passives');
   collectList('equipList', 'equip');
 
-  // Личный инвентарь
   $$('#bagContainer .bag').forEach(bag => {
     const items = [];
     bag.querySelectorAll('.bag-item').forEach(r => {
@@ -1148,7 +1140,6 @@ function loadFromStorage() {
 
 function exportJSON() {
   const data = collectData();
-  // Добавим общий инвентарь в экспорт, чтобы можно было его сохранить локально
   data.sharedBags = [];
   $$('#sharedBagContainer .bag').forEach(bag => {
       const items = [];
@@ -1190,7 +1181,6 @@ function importJSON(file) {
       const data = JSON.parse(e.target.result);
       applyData(data);
       if (data.sharedBags && data.sharedBags.length > 0) {
-          // Если в импортируемом файле есть общий инвентарь, загружаем его в облако
           renderSharedBags(data.sharedBags);
           saveSharedToCloud();
       }
@@ -1306,14 +1296,16 @@ function initTabs() {
    INIT
    ============================================================ */
 function init() {
+  // Сначала отрисовываем интерфейс, чтобы кнопки работали всегда
   renderSkills();
   renderSlots();
   renderFaithThresholds();
   loadFromStorage();
   
-  // Запускаем синхронизацию с Firebase
+  // Запускаем синхронизацию с Firebase (если он загрузился)
   initFirebaseSync();
 
+  // Привязываем события
   document.addEventListener('input', () => { autoSave(); recalcAll(); });
   document.addEventListener('change', () => { autoSave(); recalcAll(); });
 
@@ -1350,8 +1342,7 @@ function init() {
   initToggles();
   initTabs();
   
-  toast('☠ Лист персонажа загружен (Онлайн)');
+  toast('☠ Лист персонажа загружен');
 }
 
-// Ждем загрузки DOM
 document.addEventListener('DOMContentLoaded', init);
