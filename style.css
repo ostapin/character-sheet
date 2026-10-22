@@ -550,193 +550,73 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
 ::-webkit-scrollbar-thumb { background: var(--green-dark); border-radius: 5px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--green); }
 
-@media (max-width: 900px) {
-  .grid { grid-template-columns: 1fr; }
-  .skill-columns { grid-template-columns: 1fr; }
-  .list-card { grid-template-columns: 1fr; }
-  .bag-item-main { grid-template-columns: 1fr; }
-  .combat-grid { grid-template-columns: 1fr; }
-  .character-panel { grid-template-columns: 1fr !important; }
-  .sub-item { grid-template-columns: 1fr; }
-}
-#inventoryView {
-  display: block;
-}
-#inventoryView.hidden {
-  display: none;
-}
+#inventoryView { display: block; }
+#inventoryView.hidden { display: none; }
+
 /* ============================================================
    МОБИЛЬНАЯ ВЕРСИЯ (ТЕЛЕФОНЫ)
    ============================================================ */
 @media (max-width: 900px) {
   /* Шапка */
-  .topbar {
-    padding: 10px 12px;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-  }
-  .nav-tabs {
-    justify-content: center;
-  }
-  .nav-tab {
-    flex: 1;
-    text-align: center;
-    padding: 8px 10px;
-    font-size: 13px;
-  }
-  .actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 6px;
-  }
-  .actions .btn {
-    padding: 8px 4px;
-    font-size: 12px;
-  }
-  .actions .btn-combat, .actions .btn-danger {
-    grid-column: span 3; /* Кнопки Бой и Сброс на всю ширину */
-  }
+  .topbar { padding: 10px 12px; flex-direction: column; align-items: stretch; gap: 10px; }
+  .nav-tabs { justify-content: center; }
+  .nav-tab { flex: 1; text-align: center; padding: 8px 10px; font-size: 13px; }
+  .actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .actions .btn { padding: 8px 4px; font-size: 12px; }
+  .actions .btn-combat, .actions .btn-danger { grid-column: span 3; }
 
   /* Сетка контента */
-  .grid {
-    padding: 0 12px;
-    margin: 12px auto;
-    gap: 12px;
-  }
-  .card {
-    padding: 12px 14px;
-  }
+  .grid { padding: 0 10px; margin: 10px auto; gap: 10px; }
+  .card { padding: 12px 14px; }
 
   /* Персонаж */
-  .character-panel {
-    grid-template-columns: 1fr !important;
-  }
-  .character-photo .photo-box {
-    min-width: 150px;
-    min-height: 150px;
-  }
-  .character-photo .photo-box img {
-    max-width: 100%;
-    max-height: 300px;
-  }
+  .character-panel { grid-template-columns: 1fr !important; }
+  .character-photo .photo-box { min-width: 150px; min-height: 150px; }
+  .character-photo .photo-box img { max-width: 100%; max-height: 300px; }
 
   /* Характеристики */
-  .stat-grid-2 {
-    grid-template-columns: 1fr;
-  }
-  .stat-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-  .skill-columns {
-    grid-template-columns: 1fr;
-  }
+  .stat-grid-2 { grid-template-columns: 1fr; }
+  .stat-grid { grid-template-columns: 1fr 1fr; }
+  .skill-columns { grid-template-columns: 1fr; }
 
   /* Ячейки заклинаний */
-  .slot {
-    min-width: 85vw; /* Ячейка занимает почти весь экран */
-    width: 85vw;
-    padding: 8px;
-  }
-  .slot-img-box {
-    min-height: 300px;
-  }
-  .arrow {
-    height: 60px;
-    width: 30px;
-    font-size: 18px;
-  }
-  .slots-strip {
-    gap: 8px;
-  }
+  .slot { min-width: 85vw; width: 85vw; padding: 8px; }
+  .slot-img-box { min-height: 300px; }
+  .arrow { height: 60px; width: 30px; font-size: 18px; }
+  .slots-strip { gap: 8px; }
 
-  /* Карточки списков (Заклинания, Эффекты и т.д.) */
-  .list-card {
-    grid-template-columns: 1fr;
-    padding: 10px;
-    gap: 10px;
-  }
-  .list-card .card-img-box {
-    min-height: 200px;
-  }
-  .list-card .list-del {
-    justify-self: end;
-  }
+  /* Карточки списков */
+  .list-card { grid-template-columns: 1fr; padding: 10px; gap: 10px; }
+  .list-card .card-img-box { min-height: 200px; }
+  .list-card .list-del { justify-self: end; }
 
   /* Бонусы */
-  .bonus-row {
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-  }
-  .bonus-row .bonus-del {
-    grid-column: span 2;
-    justify-self: end;
-    padding: 4px 10px;
-    background: rgba(185, 28, 28, 0.1);
-    border-radius: 4px;
-  }
+  .bonus-row { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .bonus-row .bonus-del { grid-column: span 2; justify-self: end; padding: 4px 10px; background: rgba(185, 28, 28, 0.1); border-radius: 4px; }
 
-  /* Инвентарь (Сумки) */
-  .bag-header {
-    flex-wrap: wrap;
-  }
-  .bag-header input {
-    width: 100%;
-    flex: none;
-  }
-  .bag-info {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-  }
-  .bag-item-main {
-    grid-template-columns: 40px 1fr 60px;
-    gap: 6px;
-  }
-  /* Номер, Название, Кол-во */
+  /* Инвентарь */
+  .bag-header { flex-wrap: wrap; }
+  .bag-header input { width: 100%; flex: none; }
+  .bag-info { width: 100%; display: flex; justify-content: space-between; }
+  .bag-item-main { grid-template-columns: 40px 1fr 60px; gap: 6px; }
   .bag-item-main .i-num { grid-column: 1; grid-row: 1; }
   .bag-item-main .i-name { grid-column: 2; grid-row: 1; }
   .bag-item-main .i-qty { grid-column: 3; grid-row: 1; }
-  /* Описание и Вес */
   .bag-item-main .i-desc { grid-column: 1 / span 2; grid-row: 2; }
   .bag-item-main .i-weight { grid-column: 3; grid-row: 2; }
-  /* Кнопка удаления */
-  .bag-item-main .item-del {
-    grid-column: 1 / span 3;
-    grid-row: 3;
-    justify-self: end;
-    font-size: 14px;
-    padding: 4px 8px;
-  }
+  .bag-item-main .item-del { grid-column: 1 / span 3; grid-row: 3; justify-self: end; font-size: 14px; padding: 4px 8px; }
   
-  /* Подпункты в сумках */
-  .sub-items {
-    margin-left: 10px;
-    padding: 8px;
-  }
-  .sub-item {
-    grid-template-columns: 1fr 60px;
-    gap: 6px;
-  }
+  .sub-items { margin-left: 10px; padding: 8px; }
+  .sub-item { grid-template-columns: 1fr 60px; gap: 6px; }
   .sub-item .s-name { grid-column: 1; grid-row: 1; }
   .sub-item .s-qty { grid-column: 2; grid-row: 1; }
   .sub-item .s-desc { grid-column: 1 / span 2; grid-row: 2; }
-  .sub-item .sub-item-del {
-    grid-column: 1 / span 2;
-    grid-row: 3;
-    justify-self: end;
-  }
+  .sub-item .sub-item-del { grid-column: 1 / span 2; grid-row: 3; justify-self: end; }
 
   /* Пороги веры */
-  .faith-row {
-    grid-template-columns: 1fr 1fr 30px;
-  }
+  .faith-row { grid-template-columns: 1fr 1fr 30px; }
 
   /* Боевой режим */
-  .combat-grid {
-    grid-template-columns: 1fr;
-  }
-  .combat-list {
-    max-height: 300px;
-  }
+  .combat-grid { grid-template-columns: 1fr; }
+  .combat-list { max-height: 300px; }
 }
