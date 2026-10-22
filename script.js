@@ -1,5 +1,5 @@
 /* ============================================================
-   ЛИСТ ПЕРСОНАЖА — вся логика v5.3 (Исправленная синхронизация)
+   ЛИСТ ПЕРСОНАЖА — вся логика v5.5 (Исправленный запуск)
    ============================================================ */
 
 const STORAGE_KEY = 'absolute_world_character_v5';
@@ -7,12 +7,11 @@ const SLOTS_CONFIG = { 1: 8, 2: 7, 3: 6, 4: 5, 5: 4 };
 const FOCUS_SLOTS = 2;
 
 // ================= FIREBASE =================
-// Мы не делаем import здесь, а используем глобальные переменные, которые создал index.html
 let isCloudLoading = false;
 let inventoryDocRef = null;
 
 async function saveSharedToCloud() {
-    if (!window.firebaseReady || isCloudLoading) return;
+    if (!window.firebaseDB || !inventoryDocRef || isCloudLoading) return;
     try {
         const bagsData = [];
         $$('#sharedBagContainer .bag').forEach(bag => {
@@ -55,16 +54,9 @@ function renderSharedBags(bags) {
     updateSharedTotalWeight();
 }
 
-function initFirebaseSync() {
-    if (!window.firebaseReady) {
-        const statusEl = $('#sharedSyncStatus');
-        if (statusEl) {
-            statusEl.textContent = "(Облако недоступно)";
-            statusEl.style.color = "var(--danger)";
-        }
-        return;
-    }
-
+window.startFirebaseSync = function() {
+    if (!window.firebaseDB) return;
+    
     const statusEl = $('#sharedSyncStatus');
     inventoryDocRef = window.firebaseDoc(window.firebaseDB, "inventories", "shared");
 
@@ -88,7 +80,7 @@ function initFirebaseSync() {
         console.error("Ошибка подписки на облако:", error);
         if (statusEl) { statusEl.textContent = "(Офлайн)"; statusEl.style.color = "var(--danger)"; }
     });
-}
+};
 
 
 const SKILLS = {
@@ -1296,16 +1288,15 @@ function initTabs() {
    INIT
    ============================================================ */
 function init() {
-  // Сначала отрисовываем интерфейс, чтобы кнопки работали всегда
   renderSkills();
   renderSlots();
   renderFaithThresholds();
   loadFromStorage();
   
-  // Запускаем синхронизацию с Firebase (если он загрузился)
-  initFirebaseSync();
+  if (typeof window.startFirebaseSync === 'function') {
+    window.startFirebaseSync();
+  }
 
-  // Привязываем события
   document.addEventListener('input', () => { autoSave(); recalcAll(); });
   document.addEventListener('change', () => { autoSave(); recalcAll(); });
 
@@ -1345,4 +1336,9 @@ function init() {
   toast('☠ Лист персонажа загружен');
 }
 
-document.addEventListener('DOMContentLoaded', init);
+// Исправленный запуск: если DOM уже загружен, запускаем сразу
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
