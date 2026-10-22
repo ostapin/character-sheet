@@ -4,7 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Лист персонажа — Хань Фу</title>
-  <link rel="stylesheet" href="style.css">
+  
+  <!-- АВТО-ОБНОВЛЕНИЕ КЭША -->
+  <script>
+    const v = Date.now();
+    document.write(`<link rel="stylesheet" href="style.css?v=${v}">`);
+  </script>
 </head>
 <body>
 
@@ -177,7 +182,7 @@
 <div id="inventoryView" class="hidden" style="padding: 24px; height: calc(100vh - 80px); overflow-y: auto; max-width: 1500px; margin: 0 auto;">
   <section class="card card-wide">
     <div class="section-header">
-      <h2>Общий инвентарь <span id="sharedSyncStatus" style="font-size:12px;color:var(--gold);margin-left:10px">(Подключение к облаку...)</span></h2>
+      <h2>Общий инвентарь <span id="sharedSyncStatus" style="font-size:12px;color:var(--gold);margin-left:10px">(Ожидание...)</span></h2>
     </div>
     <div id="sharedBagContainer"></div>
     <button class="btn btn-add" id="addSharedBagBtn">+ Создать сумку</button>
@@ -209,7 +214,12 @@
 
 <div id="toast" class="toast"></div>
 
-<!-- Firebase SDK (грузится как модуль) -->
+<!-- АВТО-ОБНОВЛЕНИЕ КЭША ДЛЯ СКРИПТА -->
+<script>
+  document.write(`<script src="script.js?v=${v}"><\/script>`);
+</script>
+
+<!-- Firebase SDK -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -227,23 +237,23 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     
-    // Передаем функции в глобальную область, чтобы обычный script.js их видел
-    window.firebaseReady = true;
     window.firebaseDB = db;
     window.firebaseDoc = doc;
     window.firebaseOnSnapshot = onSnapshot;
     window.firebaseSetDoc = setDoc;
     
-    console.log("Firebase успешно загружен.");
+    if (typeof window.startFirebaseSync === 'function') {
+      window.startFirebaseSync();
+    } else {
+      setTimeout(() => {
+        if (typeof window.startFirebaseSync === 'function') window.startFirebaseSync();
+      }, 500);
+    }
   } catch (e) {
     console.error("Ошибка Firebase:", e);
-    window.firebaseReady = false;
+    const statusEl = document.getElementById('sharedSyncStatus');
+    if (statusEl) { statusEl.textContent = "(Облако недоступно)"; statusEl.style.color = "var(--danger)"; }
   }
-  
-  // После загрузки Firebase запускаем основной скрипт
-  const script = document.createElement('script');
-  script.src = 'script.js';
-  document.body.appendChild(script);
 </script>
 </body>
 </html>
