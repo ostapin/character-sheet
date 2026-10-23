@@ -439,7 +439,14 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
       if (open) ensureAddBtn();
     };
 
-    row.querySelector('.item-del').onclick = () => { row.remove(); updateBagStats(); autoSave(); triggerUpdate(); };
+       row.querySelector('.item-del').onclick = () => {
+      if (confirm('Вы уверены, что хотите удалить этот предмет?')) {
+        row.remove(); 
+        updateBagStats(); 
+        autoSave(); 
+        triggerUpdate();
+      }
+    };
     row.querySelectorAll('.bag-item-main input').forEach(el => el.addEventListener('input', () => { updateBagStats(); autoSave(); triggerUpdate(); }));
 
     itemsBox.appendChild(row);
