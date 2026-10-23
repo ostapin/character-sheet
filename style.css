@@ -417,7 +417,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
 
 /* Сетка на ПК */
 .bag-item-main {
-  display: grid; grid-template-columns: 80px 1fr 1.2fr 1fr 1fr 36px;
+  display: grid; grid-template-columns: 80px 1fr 1.2fr 1fr 1fr 36px 36px;
   gap: 8px; align-items: center;
 }
 .bag-item-main input { padding: 6px 8px; font-size: 13px; }
@@ -619,10 +619,12 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     align-items: center;
   }
   
-  .bag-item-main input {
+  .bag-item-main input,
+  .bag-item-main textarea {
     height: 36px;
     padding: 4px 6px;
     font-size: 13px;
+    border-radius: 6px;
   }
 
   /* 1 строка: Номер + Название */
@@ -643,9 +645,12 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     min-height: 36px;
     resize: none;
     overflow-y: hidden;
+    line-height: 1.4;
+    padding: 8px 6px;
+    word-break: break-word;
   }
   
-  /* 3 строка: Кол-во + Вес */
+  /* 3 строка: Кол-во + Вес + Стрелочка + Крестик */
   .bag-item-main .i-qty { 
     width: 60px;
     flex: none;
@@ -655,25 +660,23 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     flex: none;
   }
   
-  /* 4 строка: Крестик удаления */
-  .bag-item-main .item-del { 
-    margin-left: auto;
-    background: transparent;
-    color: #ef4444;
-    font-size: 18px;
-    padding: 4px 8px;
-    border: none;
-  }
-  
-  /* 5 строка: Стрелочка */
-  .bag-item-toggle {
+  .bag-item-main .bag-item-toggle {
     background: transparent;
     border: none;
     color: var(--green);
     font-size: 16px;
     padding: 4px;
-    width: 100%;
-    text-align: left;
+    width: auto;
+    margin-left: auto; /* прижимает стрелку и крестик вправо */
+  }
+  
+  .bag-item-main .item-del { 
+    background: transparent;
+    color: #ef4444;
+    font-size: 18px;
+    padding: 4px 8px;
+    border: none;
+    width: auto;
   }
 
   /* Подпункты */
