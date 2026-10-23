@@ -1,5 +1,5 @@
 /* ============================================================
-   ЛИСТ ПЕРСОНАЖА — вся логика v5.5 (Исправленный запуск)
+   ЛИСТ ПЕРСОНАЖА — вся логика v5.6 (Авто-нумерация)
    ============================================================ */
 
 const STORAGE_KEY = 'absolute_world_character_v5';
@@ -361,7 +361,7 @@ function createSubclass(data = {}) {
 }
 
 /* ============================================================
-   СУМКИ (ИНВЕНТАРЬ)
+   СУМКИ (ИНВЕНТАРЬ) с АВТО-НУМЕРАЦИЕЙ
    ============================================================ */
 function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
   const div = document.createElement('div');
@@ -382,12 +382,21 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
     if (isCloud) saveSharedToCloud();
   };
 
+  // ФУНКЦИЯ ПЕРЕСЧЕТА НОМЕРОВ
+  function renumberItems() {
+    const rows = itemsBox.querySelectorAll('.bag-item');
+    rows.forEach((row, index) => {
+      const numInput = row.querySelector('.i-num');
+      numInput.value = index + 1; // Присваиваем порядковый номер (1, 2, 3...)
+    });
+  }
+
   function addItem(item = {}) {
     const row = document.createElement('div');
     row.className = 'bag-item';
     row.innerHTML = `
       <div class="bag-item-main">
-        <input type="number" class="i-num" placeholder="#" value="${item.num || ''}">
+        <input type="number" class="i-num" placeholder="#" readonly>
         <input type="text" class="i-name" placeholder="Предмет" value="${item.name || ''}">
         <input type="text" class="i-desc" placeholder="Описание" value="${item.desc || ''}">
         <input type="number" class="i-qty" placeholder="Кол-во" value="${item.qty || ''}">
@@ -439,17 +448,19 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
       if (open) ensureAddBtn();
     };
 
-       row.querySelector('.item-del').onclick = () => {
-      if (confirm('Вы уверены, что хотите удалить этот предмет?')) {
+    row.querySelector('.item-del').onclick = () => { 
+      if(confirm('Удалить предмет?')) {
         row.remove(); 
+        renumberItems(); // Пересчитываем номера после удаления
         updateBagStats(); 
         autoSave(); 
-        triggerUpdate();
+        triggerUpdate(); 
       }
     };
     row.querySelectorAll('.bag-item-main input').forEach(el => el.addEventListener('input', () => { updateBagStats(); autoSave(); triggerUpdate(); }));
 
     itemsBox.appendChild(row);
+    renumberItems(); // Пересчитываем номера после добавления
   }
 
   function updateBagStats() {
@@ -469,10 +480,19 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
   (data.items || []).forEach(addItem);
 
   div.querySelector('.bag-add').onclick = () => { addItem(); autoSave(); triggerUpdate(); };
-  div.querySelector('.bag-del').onclick = () => { div.remove(); triggerUpdate(); autoSave(); };
+  
+  // ЗАЩИТА СУМКИ ОТ УДАЛЕНИЯ
+  div.querySelector('.bag-del').onclick = () => { 
+    if (confirm('Вы уверены, что хотите удалить ВСЮ сумку со всем содержимым?')) {
+      div.remove(); 
+      triggerUpdate(); 
+      autoSave(); 
+    }
+  };
   div.querySelector('.bag-name').addEventListener('input', () => { autoSave(); if(isCloud) saveSharedToCloud(); });
 
   div._updateStats = updateBagStats;
+  renumberItems(); // Первичная нумерация при загрузке
   updateBagStats();
   return div;
 }
@@ -1343,7 +1363,6 @@ function init() {
   toast('☠ Лист персонажа загружен');
 }
 
-// Исправленный запуск: если DOM уже загружен, запускаем сразу
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {
