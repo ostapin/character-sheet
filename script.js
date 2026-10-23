@@ -1,5 +1,5 @@
 /* ============================================================
-   ЛИСТ ПЕРСОНАЖА — вся логика v5.6 (Авто-нумерация)
+   ЛИСТ ПЕРСОНАЖА — вся логика v5.7 (Финальная)
    ============================================================ */
 
 const STORAGE_KEY = 'absolute_world_character_v5';
@@ -369,7 +369,10 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
   div.innerHTML = `
     <div class="bag-header">
       <input type="text" class="bag-name" placeholder="Название сумки">
-      <span class="bag-info">Ячеек: <b class="bag-count">0</b> · Вес: <b class="bag-weight">0</b></span>
+      <div class="bag-info">
+        <span>Ячеек: <b class="bag-count">0</b></span>
+        <span>Вес: <b class="bag-weight">0</b></span>
+      </div>
       <button class="btn btn-danger bag-del" style="padding:6px 10px">✖</button>
     </div>
     <div class="bag-items"></div>
@@ -387,7 +390,7 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
     const rows = itemsBox.querySelectorAll('.bag-item');
     rows.forEach((row, index) => {
       const numInput = row.querySelector('.i-num');
-      numInput.value = index + 1; // Присваиваем порядковый номер (1, 2, 3...)
+      numInput.value = index + 1;
     });
   }
 
@@ -451,7 +454,7 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
     row.querySelector('.item-del').onclick = () => { 
       if(confirm('Удалить предмет?')) {
         row.remove(); 
-        renumberItems(); // Пересчитываем номера после удаления
+        renumberItems();
         updateBagStats(); 
         autoSave(); 
         triggerUpdate(); 
@@ -460,7 +463,7 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
     row.querySelectorAll('.bag-item-main input').forEach(el => el.addEventListener('input', () => { updateBagStats(); autoSave(); triggerUpdate(); }));
 
     itemsBox.appendChild(row);
-    renumberItems(); // Пересчитываем номера после добавления
+    renumberItems();
   }
 
   function updateBagStats() {
@@ -481,7 +484,6 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
 
   div.querySelector('.bag-add').onclick = () => { addItem(); autoSave(); triggerUpdate(); };
   
-  // ЗАЩИТА СУМКИ ОТ УДАЛЕНИЯ
   div.querySelector('.bag-del').onclick = () => { 
     if (confirm('Вы уверены, что хотите удалить ВСЮ сумку со всем содержимым?')) {
       div.remove(); 
@@ -492,7 +494,7 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
   div.querySelector('.bag-name').addEventListener('input', () => { autoSave(); if(isCloud) saveSharedToCloud(); });
 
   div._updateStats = updateBagStats;
-  renumberItems(); // Первичная нумерация при загрузке
+  renumberItems();
   updateBagStats();
   return div;
 }
