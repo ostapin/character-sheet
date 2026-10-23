@@ -641,7 +641,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   /* 2 строка: Описание (растягивается вниз) */
   .bag-item-main .i-desc { 
     width: 100%;
-    height: auto !important;
+    height: auto; /* Убрали !important */
     min-height: 36px;
     resize: none;
     overflow-y: hidden;
