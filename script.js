@@ -412,13 +412,24 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
       <div class="sub-items" style="display:none"></div>
     `;
 
-    // Авто-увеличение высоты для textarea (описания)
+    // ============================================================
+    // ИСПРАВЛЕНИЕ АВТО-РОСТА (Сработает на телефоне)
+    // ============================================================
     const descInput = row.querySelector('.i-desc');
     const autoResize = () => {
+      // Сбрасываем высоту, чтобы браузер пересчитал контент
       descInput.style.height = 'auto';
-      descInput.style.height = descInput.scrollHeight + 'px';
+      // Устанавливаем новую высоту с запасом в 2px, чтобы избежать обрезки
+      descInput.style.height = (descInput.scrollHeight + 2) + 'px';
     };
+
     descInput.addEventListener('input', autoResize);
+    
+    // Принудительный пересчет с задержкой. 
+    // Это критически важно для мобильных браузеров, которые не успевают 
+    // отрисовать шрифты и контейнеры мгновенно при загрузке.
+    setTimeout(autoResize, 50);
+    setTimeout(autoResize, 250);
 
     const toggle = row.querySelector('.bag-item-toggle');
     const subBox = row.querySelector('.sub-items');
@@ -440,11 +451,6 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
     if (item.subs && item.subs.length) {
       item.subs.forEach(addSubItem);
     }
-
-    // Принудительный пересчет высоты после того, как элемент полностью сформирован в DOM
-    // Это исправляет проблему с длинным текстом при загрузке страницы
-    setTimeout(autoResize, 10);
-    autoResize();
 
     let addSubBtn = null;
     function ensureAddBtn() {
