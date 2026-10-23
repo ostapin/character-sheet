@@ -397,18 +397,30 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
   function addItem(item = {}) {
     const row = document.createElement('div');
     row.className = 'bag-item';
+    
+    // Измененная структура: textarea для описания, стрелочка перенесена в основную строку
     row.innerHTML = `
       <div class="bag-item-main">
         <input type="number" class="i-num" placeholder="#" readonly>
         <input type="text" class="i-name" placeholder="Предмет" value="${item.name || ''}">
-        <input type="text" class="i-desc" placeholder="Описание" value="${item.desc || ''}">
+        <textarea class="i-desc" placeholder="Описание" rows="1">${item.desc || ''}</textarea>
         <input type="number" class="i-qty" placeholder="Кол-во" value="${item.qty || ''}">
         <input type="number" step="0.1" class="i-weight" placeholder="Вес" value="${item.weight || ''}">
+        <button class="bag-item-toggle" title="Раскрыть список">▾</button>
         <button class="item-del">✖</button>
       </div>
-      <button class="bag-item-toggle" title="Раскрыть список">▾</button>
       <div class="sub-items" style="display:none"></div>
     `;
+
+    // Авто-увеличение высоты для textarea (описания)
+    const descInput = row.querySelector('.i-desc');
+    const autoResize = () => {
+      descInput.style.height = 'auto';
+      descInput.style.height = descInput.scrollHeight + 'px';
+    };
+    descInput.addEventListener('input', autoResize);
+    // Небольшая задержка, чтобы при подгрузке из облака/локалстораджа высота сразу встала как надо
+    setTimeout(autoResize, 10);
 
     const toggle = row.querySelector('.bag-item-toggle');
     const subBox = row.querySelector('.sub-items');
