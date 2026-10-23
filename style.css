@@ -565,7 +565,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
   .actions .btn { padding: 8px 4px; font-size: 12px; }
 
-  /* Сетка контента - РАСШИРЯЕМ ДО КРАЕВ */
+  /* Сетка контента */
   .grid { padding: 0 6px; margin: 10px auto; gap: 8px; }
   .card { padding: 10px; }
 
@@ -585,7 +585,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .arrow { height: 50px; width: 25px; font-size: 16px; }
   .slots-strip { gap: 6px; }
 
-  /* Карточки списков (Заклинания, Эффекты) */
+  /* Карточки списков */
   .list-card { grid-template-columns: 1fr; padding: 8px; gap: 8px; }
   .list-card .card-img-box { min-height: 180px; }
   .list-card .list-del { justify-self: end; }
@@ -594,65 +594,63 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .bonus-row { grid-template-columns: 1fr 1fr; gap: 6px; }
   .bonus-row .bonus-del { grid-column: span 2; justify-self: end; padding: 4px 10px; background: rgba(185, 28, 28, 0.1); border-radius: 4px; }
 
-  /* ИНВЕНТАРЬ (СУМКИ) - АККУРАТНАЯ СТОПКА */
+  /* ИНВЕНТАРЬ (СУМКИ) - 4 СТРОКИ */
   .bag-header { flex-wrap: wrap; }
   .bag-header input { width: 100%; flex: none; margin-bottom: 6px; }
   .bag-info { width: 100%; display: flex; justify-content: space-between; }
   
   .bag-item-main { 
-    display: flex !important;
-    flex-wrap: wrap;
+    display: grid !important;
+    grid-template-columns: 70px 1fr; /* Номер шире, название на остаток */
     gap: 6px; 
     align-items: center;
+    position: relative;
+    padding-bottom: 6px;
   }
   
-  /* Номер шире */
-  .bag-item-main .i-num { 
-    width: 60px; 
-    flex: none;
-    text-align: center;
-  }
+  /* 1 строка: Номер и Название */
+  .bag-item-main .i-num { grid-column: 1; grid-row: 1; text-align: center; }
+  .bag-item-main .i-name { grid-column: 2; grid-row: 1; }
   
-  /* Название */
-  .bag-item-main .i-name { 
-    flex: 1; 
-    min-width: 100px;
-  }
+  /* 2 строка: Описание (на всю ширину) */
+  .bag-item-main .i-desc { grid-column: 1 / span 2; grid-row: 2; }
   
-  /* Кол-во и Вес */
+  /* 3 строка: Кол-во и Вес (узкие) */
   .bag-item-main .i-qty { 
-    width: calc(50% - 3px);
+    grid-column: 1; 
+    grid-row: 3; 
+    width: 100%;
   }
   .bag-item-main .i-weight { 
-    width: calc(50% - 3px);
-  }
-  
-  /* Описание на всю ширину */
-  .bag-item-main .i-desc { 
+    grid-column: 2; 
+    grid-row: 3; 
     width: 100%;
-    margin-top: 4px;
+    justify-self: start;
+    max-width: 80px; /* Ограничиваем ширину веса */
   }
   
-  /* Кнопка удаления - аккуратный крестик в углу */
-  .bag-item-main .item-del { 
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    background: transparent;
-    color: #ef4444;
-    font-size: 18px;
-    padding: 4px;
-    border: none;
-  }
-  .bag-item { position: relative; } /* Чтобы крестик привязался к карточке */
-
+  /* 4 строка: Кнопка "развернуть" и крестик */
   .bag-item-toggle {
-    width: 100%;
+    grid-column: 1;
+    grid-row: 4;
     text-align: left;
     padding: 4px 0;
     background: transparent;
     border: none;
-    margin-top: 4px;
+    width: 100%;
+    font-size: 16px;
+  }
+  
+  .bag-item-main .item-del { 
+    grid-column: 2;
+    grid-row: 4;
+    justify-self: end;
+    background: transparent;
+    color: #ef4444;
+    font-size: 18px;
+    padding: 4px 10px;
+    border: 1px solid rgba(185, 28, 28, 0.3);
+    border-radius: 6px;
   }
   
   /* Подпункты в сумках */
