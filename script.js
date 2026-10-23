@@ -419,8 +419,6 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
       descInput.style.height = descInput.scrollHeight + 'px';
     };
     descInput.addEventListener('input', autoResize);
-    // Небольшая задержка, чтобы при подгрузке из облака/локалстораджа высота сразу встала как надо
-    setTimeout(autoResize, 10);
 
     const toggle = row.querySelector('.bag-item-toggle');
     const subBox = row.querySelector('.sub-items');
@@ -442,6 +440,11 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
     if (item.subs && item.subs.length) {
       item.subs.forEach(addSubItem);
     }
+
+    // Принудительный пересчет высоты после того, как элемент полностью сформирован в DOM
+    // Это исправляет проблему с длинным текстом при загрузке страницы
+    setTimeout(autoResize, 10);
+    autoResize();
 
     let addSubBtn = null;
     function ensureAddBtn() {
