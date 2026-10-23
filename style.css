@@ -553,9 +553,10 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
 #inventoryView.hidden { display: none; }
 
 /* ============================================================
-   МОБИЛЬНАЯ ВЕРСИЯ (ТЕЛЕФОНЫ)
+   МОБИЛЬНАЯ ВЕРСИЯ (ТЕЛЕФОНЫ) - ФИНАЛЬНАЯ
    ============================================================ */
 @media (max-width: 900px) {
+  /* Шапка */
   .topbar { padding: 10px 12px; flex-direction: column; align-items: stretch; gap: 10px; }
   .nav-tabs { justify-content: center; }
   .nav-tab { flex: 1; text-align: center; padding: 8px 10px; font-size: 13px; }
@@ -585,89 +586,109 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .bonus-row { grid-template-columns: 1fr 1fr; gap: 6px; }
   .bonus-row .bonus-del { grid-column: span 2; justify-self: end; padding: 4px 10px; background: rgba(185, 28, 28, 0.1); border-radius: 4px; }
 
-  /* ИНВЕНТАРЬ (СУМКИ) - МОБИЛЬНАЯ ВЕРСИЯ */
+  /* ============================================================
+     ИНВЕНТАРЬ (СУМКИ) - ФИНАЛЬНАЯ ВЕРСИЯ ДЛЯ ТЕЛЕФОНА
+     ============================================================ */
   
-  /* Шапка сумки: Название сверху, под ним Ячейки, Вес и Крестик в одну строку */
+  /* Шапка сумки */
   .bag-header {
-    display: flex; 
-    flex-direction: column;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 6px;
+    margin-bottom: 10px;
+    position: relative;
   }
-  .bag-header input { width: 100%; margin-bottom: 0; }
-  
-  .bag-header .bag-info { 
-    display: flex; 
-    justify-content: space-between;
-    width: 100%;
+  .bag-header input { width: 100%; flex: none; margin-bottom: 4px; }
+  .bag-header .bag-info {
+    display: flex;
+    gap: 12px;
     font-size: 13px;
+    flex: 1;
   }
-
+  .bag-header .bag-info b { color: var(--green-bright); }
+  /* Крестик удаления сумки */
   .bag-del { 
-    position: absolute; 
-    bottom: 10px; 
-    right: 10px; 
-    padding: 6px 10px; 
-    font-size: 16px; 
-    z-index: 10;
+    flex: none; 
+    padding: 4px 10px; 
+    font-size: 16px;
+    background: rgba(185, 28, 28, 0.1);
   }
 
   /* Карточка предмета */
   .bag-item-main { 
-    display: grid !important;
-    grid-template-columns: 50px 1fr 50px; /* 3 колонки в ряд */
+    display: flex;
+    flex-wrap: wrap;
     gap: 6px; 
     align-items: center;
-    position: relative;
-    padding-bottom: 6px;
   }
   
-  /* 1 строка: Номер, Название, Крестик */
-  .bag-item-main .i-num { grid-column: 1; grid-row: 1; text-align: center; padding: 4px; font-size: 13px; }
-  .bag-item-main .i-name { grid-column: 2; grid-row: 1; }
-  .bag-item-main .item-del { grid-column: 3; grid-row: 1; background: transparent; color: #ef4444; font-size: 18px; padding: 4px; border: none; }
-
-  /* 2 строка: Описание (растягивается вниз) */
-  .bag-item-main .i-desc { 
-    grid-column: 1 / span 3; 
-    grid-row: 2; 
-    min-height: 44px;
-    resize: vertical; /* Разрешаем тянуть вниз */
-    overflow-y: auto;
+  /* Все поля одной высоты */
+  .bag-item-main input {
+    height: 36px;
+    padding: 4px 6px;
     font-size: 13px;
   }
+
+  /* 1 строка: Номер + Название */
+  .bag-item-main .i-num { 
+    width: 50px;
+    flex: none;
+    text-align: center;
+  }
+  .bag-item-main .i-name { 
+    flex: 1;
+    min-width: 100px;
+  }
   
-  /* 3 строка: Кол-во, Вес, Стрелочка */
-  .bag-item-main .i-qty { 
-    grid-column: 1; 
-    grid-row: 3; 
+  /* 2 строка: Описание (растягивается вниз) */
+  .bag-item-main .i-desc { 
     width: 100%;
-    padding: 4px;
+    height: auto !important;
+    min-height: 36px;
+    resize: none;
+    overflow-y: hidden;
+  }
+  
+  /* 3 строка: Кол-во + Вес + Стрелочка + Крестик */
+  .bag-item-main .i-qty { 
+    width: 60px;
+    flex: none;
   }
   .bag-item-main .i-weight { 
-    grid-column: 2; 
-    grid-row: 3; 
-    width: 100%;
+    width: 70px; 
+    flex: none;
+  }
+  
+  .bag-item-main .item-del { 
+    margin-left: auto;
+    background: transparent;
+    color: #ef4444;
+    font-size: 18px;
+    padding: 4px 8px;
+    border: none;
   }
   
   .bag-item-toggle {
-    grid-column: 3;
-    grid-row: 3;
-    padding: 4px;
-    font-size: 16px;
     background: transparent;
     border: none;
-    text-align: center;
+    color: var(--green);
+    font-size: 16px;
+    padding: 4px;
   }
 
-  .sub-items { margin-left: 0; padding: 6px; }
-  .sub-item { grid-template-columns: 1fr 50px; gap: 4px; }
-  .sub-item .s-name { grid-column: 1; grid-row: 1; }
-  .sub-item .s-qty { grid-column: 2; grid-row: 1; }
-  .sub-item .s-desc { grid-column: 1 / span 2; grid-row: 2; }
-  .sub-item .sub-item-del { grid-column: 1 / span 2; grid-row: 3; justify-self: end; }
+  /* Подпункты */
+  .sub-items { margin-left: 0; padding: 6px; width: 100%; }
+  .sub-item { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .sub-item .s-name { flex: 1; }
+  .sub-item .s-qty { width: 60px; flex: none; }
+  .sub-item .s-desc { width: 100%; }
+  .sub-item .sub-item-del { margin-left: auto; background: transparent; border: none; color: #ef4444; }
 
+  /* Пороги веры */
   .faith-row { grid-template-columns: 1fr 1fr 30px; }
 
+  /* Боевой режим */
   .combat-grid { grid-template-columns: 1fr; }
   .combat-list { max-height: 300px; }
 }
