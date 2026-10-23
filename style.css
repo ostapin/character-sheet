@@ -556,7 +556,6 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
    МОБИЛЬНАЯ ВЕРСИЯ (ТЕЛЕФОНЫ) - ФИНАЛЬНАЯ
    ============================================================ */
 @media (max-width: 900px) {
-  /* Шапка */
   .topbar { padding: 10px 12px; flex-direction: column; align-items: stretch; gap: 10px; }
   .nav-tabs { justify-content: center; }
   .nav-tab { flex: 1; text-align: center; padding: 8px 10px; font-size: 13px; }
@@ -586,11 +585,9 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .bonus-row { grid-template-columns: 1fr 1fr; gap: 6px; }
   .bonus-row .bonus-del { grid-column: span 2; justify-self: end; padding: 4px 10px; background: rgba(185, 28, 28, 0.1); border-radius: 4px; }
 
-  /* ============================================================
-     ИНВЕНТАРЬ (СУМКИ) - ФИНАЛЬНАЯ ВЕРСИЯ ДЛЯ ТЕЛЕФОНА
-     ============================================================ */
+  /* ИНВЕНТАРЬ (СУМКИ) */
   
-  /* Шапка сумки */
+  /* Шапка сумки: Название сверху, под ним Ячейки, Вес и Крестик */
   .bag-header {
     display: flex;
     flex-wrap: wrap;
@@ -607,7 +604,6 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     flex: 1;
   }
   .bag-header .bag-info b { color: var(--green-bright); }
-  /* Крестик удаления сумки */
   .bag-del { 
     flex: none; 
     padding: 4px 10px; 
@@ -615,7 +611,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     background: rgba(185, 28, 28, 0.1);
   }
 
-  /* Карточка предмета */
+  /* Карточка предмета - все поля одной высоты */
   .bag-item-main { 
     display: flex;
     flex-wrap: wrap;
@@ -623,7 +619,6 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     align-items: center;
   }
   
-  /* Все поля одной высоты */
   .bag-item-main input {
     height: 36px;
     padding: 4px 6px;
@@ -650,7 +645,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     overflow-y: hidden;
   }
   
-  /* 3 строка: Кол-во + Вес + Стрелочка + Крестик */
+  /* 3 строка: Кол-во + Вес */
   .bag-item-main .i-qty { 
     width: 60px;
     flex: none;
@@ -660,6 +655,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     flex: none;
   }
   
+  /* 4 строка: Крестик удаления */
   .bag-item-main .item-del { 
     margin-left: auto;
     background: transparent;
@@ -669,12 +665,15 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     border: none;
   }
   
+  /* 5 строка: Стрелочка */
   .bag-item-toggle {
     background: transparent;
     border: none;
     color: var(--green);
     font-size: 16px;
     padding: 4px;
+    width: 100%;
+    text-align: left;
   }
 
   /* Подпункты */
@@ -685,10 +684,8 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .sub-item .s-desc { width: 100%; }
   .sub-item .sub-item-del { margin-left: auto; background: transparent; border: none; color: #ef4444; }
 
-  /* Пороги веры */
   .faith-row { grid-template-columns: 1fr 1fr 30px; }
 
-  /* Боевой режим */
   .combat-grid { grid-template-columns: 1fr; }
   .combat-list { max-height: 300px; }
 }
