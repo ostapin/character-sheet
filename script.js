@@ -412,24 +412,36 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
       <div class="sub-items" style="display:none"></div>
     `;
 
-    // ============================================================
-    // ИСПРАВЛЕНИЕ АВТО-РОСТА (Сработает на телефоне)
-    // ============================================================
-    const descInput = row.querySelector('.i-desc');
+        const descInput = row.querySelector('.i-desc');
+    
+    // Более надёжный авто-рост для мобильных браузеров.
+    // Используем requestAnimationFrame и двойной сброс высоты,
+    // чтобы браузер точно пересчитал scrollHeight.
     const autoResize = () => {
-      // Сбрасываем высоту, чтобы браузер пересчитал контент
-      descInput.style.height = 'auto';
-      // Устанавливаем новую высоту с запасом в 2px, чтобы избежать обрезки
-      descInput.style.height = (descInput.scrollHeight + 2) + 'px';
+      // Принудительно ставим маленькую высоту, чтобы сбросить внутренний расчет
+      descInput.style.height = '1px';
+      
+      // Используем requestAnimationFrame, чтобы браузер применил style.height = '1px'
+      // и только потом вычислил scrollHeight. Без этого на мобильных scrollHeight 
+      // может возвращать неправильное значение.
+      requestAnimationFrame(() => {
+        descInput.style.height = (descInput.scrollHeight + 2) + 'px';
+        // Если контента нет, возвращаем минимальную высоту (36px из CSS)
+        if (descInput.scrollHeight <= 36) {
+           descInput.style.height = '36px';
+        }
+      });
     };
 
+    // Слушаем ввод
     descInput.addEventListener('input', autoResize);
     
-    // Принудительный пересчет с задержкой. 
-    // Это критически важно для мобильных браузеров, которые не успевают 
-    // отрисовать шрифты и контейнеры мгновенно при загрузке.
+    // Принудительный пересчет с задержкой (для мобильных).
+    // 50мс — когда DOM готов, 250мс — когда шрифты точно загружены.
     setTimeout(autoResize, 50);
     setTimeout(autoResize, 250);
+    // Третий вызов на случай, если Firebase подгрузит данные позже
+    setTimeout(autoResize, 800);
 
     const toggle = row.querySelector('.bag-item-toggle');
     const subBox = row.querySelector('.sub-items');
