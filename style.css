@@ -417,7 +417,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
 
 /* Сетка на ПК */
 .bag-item-main {
-  display: grid; grid-template-columns: 70px 1fr 1.2fr 70px 70px 36px;
+  display: grid; grid-template-columns: 80px 1fr 1.2fr 1fr 1fr 36px;
   gap: 8px; align-items: center;
 }
 .bag-item-main input { padding: 6px 8px; font-size: 13px; }
@@ -587,50 +587,56 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
 
   /* ИНВЕНТАРЬ (СУМКИ) - МОБИЛЬНАЯ ВЕРСИЯ */
   
-  /* Шапка сумки: Ячейки, Вес, Крестик в одну строку */
+  /* Шапка сумки: Название сверху, под ним Ячейки, Вес и Крестик в одну строку */
   .bag-header {
     display: flex; 
-    flex-direction: row; 
-    flex-wrap: nowrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    margin-bottom: 10px;
+    flex-direction: column;
+    gap: 6px;
   }
-  .bag-header input { width: 100%; flex: 1 1 100%; margin-bottom: 6px; } /* Название сумки на всю ширину */
-  .bag-info { 
+  .bag-header input { width: 100%; margin-bottom: 0; }
+  
+  .bag-header .bag-info { 
     display: flex; 
-    gap: 12px; 
-    font-size: 12px; 
-    flex: 1;
+    justify-content: space-between;
+    width: 100%;
+    font-size: 13px;
   }
-  .bag-info b { color: var(--green-bright); }
-  .bag-del { flex: none; padding: 4px 10px; font-size: 14px; } /* Крестик удаления сумки */
 
-  /* Карточка предмета в 3 строки */
+  .bag-del { 
+    position: absolute; 
+    bottom: 10px; 
+    right: 10px; 
+    padding: 6px 10px; 
+    font-size: 16px; 
+    z-index: 10;
+  }
+
+  /* Карточка предмета */
   .bag-item-main { 
     display: grid !important;
-    grid-template-columns: 50px 1fr; 
+    grid-template-columns: 50px 1fr 50px; /* 3 колонки в ряд */
     gap: 6px; 
     align-items: center;
     position: relative;
     padding-bottom: 6px;
   }
   
-  /* 1 строка: Номер и Название */
+  /* 1 строка: Номер, Название, Крестик */
   .bag-item-main .i-num { grid-column: 1; grid-row: 1; text-align: center; padding: 4px; font-size: 13px; }
   .bag-item-main .i-name { grid-column: 2; grid-row: 1; }
-  
-  /* 2 строка: Описание (растягивается вниз под текст) */
+  .bag-item-main .item-del { grid-column: 3; grid-row: 1; background: transparent; color: #ef4444; font-size: 18px; padding: 4px; border: none; }
+
+  /* 2 строка: Описание (растягивается вниз) */
   .bag-item-main .i-desc { 
-    grid-column: 1 / span 2; 
+    grid-column: 1 / span 3; 
     grid-row: 2; 
-    min-height: 44px; /* Высота под 2 строки текста */
-    resize: none; /* Запрещаем тянуть мышкой */
-    overflow-y: hidden; /* Скрываем скролл, текст сам растянет */
+    min-height: 44px;
+    resize: vertical; /* Разрешаем тянуть вниз */
+    overflow-y: auto;
+    font-size: 13px;
   }
   
-  /* 3 строка: Кол-во + Вес + Крестик + Стрелочка */
+  /* 3 строка: Кол-во, Вес, Стрелочка */
   .bag-item-main .i-qty { 
     grid-column: 1; 
     grid-row: 3; 
@@ -640,31 +646,19 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .bag-item-main .i-weight { 
     grid-column: 2; 
     grid-row: 3; 
-    width: calc(100% - 80px); /* Оставляем место под крестик и стрелку */
-    justify-self: start;
+    width: 100%;
   }
   
   .bag-item-toggle {
-    position: absolute;
-    bottom: 8px;
-    right: 40px;
+    grid-column: 3;
+    grid-row: 3;
     padding: 4px;
     font-size: 16px;
     background: transparent;
     border: none;
+    text-align: center;
   }
 
-  .bag-item-main .item-del { 
-    position: absolute;
-    bottom: 8px;
-    right: 8px;
-    background: transparent;
-    color: #ef4444;
-    font-size: 18px;
-    padding: 4px;
-    border: none;
-  }
-  
   .sub-items { margin-left: 0; padding: 6px; }
   .sub-item { grid-template-columns: 1fr 50px; gap: 4px; }
   .sub-item .s-name { grid-column: 1; grid-row: 1; }
