@@ -21,7 +21,7 @@ body {
   color: var(--text);
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   min-height: 100vh;
-  padding-bottom: 20px;
+  padding-bottom: 40px;
   line-height: 1.5;
 }
 
@@ -402,25 +402,47 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   padding: 14px; margin-bottom: 14px;
 }
 .bag-header {
-  display: flex; justify-content: space-between; align-items: center;
-  gap: 10px; margin-bottom: 12px; flex-wrap: wrap;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 15px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
 }
-.bag-header input { flex: 1; min-width: 150px; font-weight: 700; color: var(--green-bright); }
-.bag-info { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.bag-header .bag-name {
+  flex: 1;
+  min-width: 120px;
+  font-weight: 700;
+  color: var(--green-bright);
+}
+.bag-info {
+  font-size: 12px;
+  white-space: nowrap;
+  margin-right: auto;
+  color: var(--muted);
+}
 .bag-info b { color: var(--green-bright); }
+.bag-header .bag-del {
+  flex-shrink: 0;
+}
 .bag-items { display: flex; flex-direction: column; gap: 8px; }
-
 .bag-item {
   background: #0a0d0a; border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px;
-  position: relative; /* Для привязки крестика */
 }
-
-/* Сетка на ПК (3 цифры влезают) */
 .bag-item-main {
-  display: grid; grid-template-columns: 70px 1fr 1.2fr 70px 70px 36px;
-  gap: 8px; align-items: center;
+  display: grid; grid-template-columns: 40px 1fr 1.2fr 70px 70px 36px;
+  gap: 8px; align-items: start; /* Выравнивание по верхнему краю, чтобы описание росло */
 }
 .bag-item-main input { padding: 6px 8px; font-size: 13px; }
+/* Поле описания - растягивается под текст */
+.bag-item-main .i-desc {
+  resize: none;
+  overflow: hidden;
+  min-height: 38px;
+  height: auto;
+  field-sizing: content; /* Автоматическое растягивание по высоте (Chrome/Edge) */
+}
+
 .bag-item-toggle {
   background: transparent; border: none; color: var(--green); font-size: 14px;
   cursor: pointer; padding: 2px 6px; font-weight: 700;
@@ -532,7 +554,12 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
 .combat-roll-btn:hover { border-color: #ef4444; color: #fff; box-shadow: 0 0 20px rgba(239, 68, 68, 0.5); }
 .combat-empty { color: var(--muted); text-align: center; padding: 40px 20px; font-style: italic; }
 
-/* TOAST */
+/* FOOTER & TOAST */
+.footer {
+  text-align: center; margin-top: 40px; padding: 20px;
+  color: var(--muted); font-size: 12px; letter-spacing: 1px;
+  border-top: 1px solid var(--border);
+}
 .toast {
   position: fixed; bottom: 30px; right: 30px;
   background: linear-gradient(180deg, #14532d, #0f3d20);
@@ -549,112 +576,12 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
 ::-webkit-scrollbar-thumb { background: var(--green-dark); border-radius: 5px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--green); }
 
-#inventoryView { display: block; }
-#inventoryView.hidden { display: none; }
-
-/* ============================================================
-   МОБИЛЬНАЯ ВЕРСИЯ (ТЕЛЕФОНЫ)
-   ============================================================ */
 @media (max-width: 900px) {
-  .topbar { padding: 10px 12px; flex-direction: column; align-items: stretch; gap: 10px; }
-  .nav-tabs { justify-content: center; }
-  .nav-tab { flex: 1; text-align: center; padding: 8px 10px; font-size: 13px; }
-  .actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
-  .actions .btn { padding: 8px 4px; font-size: 12px; }
-
-  .grid { padding: 0 6px; margin: 10px auto; gap: 8px; }
-  .card { padding: 10px; }
-
-  .character-panel { grid-template-columns: 1fr !important; }
-  .character-photo .photo-box { min-width: 150px; min-height: 150px; }
-  .character-photo .photo-box img { max-width: 100%; max-height: 300px; }
-
-  .stat-grid-2 { grid-template-columns: 1fr; }
-  .stat-grid { grid-template-columns: 1fr 1fr; }
+  .grid { grid-template-columns: 1fr; }
   .skill-columns { grid-template-columns: 1fr; }
-
-  .slot { min-width: 92vw; width: 92vw; padding: 6px; }
-  .slot-img-box { min-height: 250px; }
-  .arrow { height: 50px; width: 25px; font-size: 16px; }
-  .slots-strip { gap: 6px; }
-
-  .list-card { grid-template-columns: 1fr; padding: 8px; gap: 8px; }
-  .list-card .card-img-box { min-height: 180px; }
-  .list-card .list-del { justify-self: end; }
-
-  .bonus-row { grid-template-columns: 1fr 1fr; gap: 6px; }
-  .bonus-row .bonus-del { grid-column: span 2; justify-self: end; padding: 4px 10px; background: rgba(185, 28, 28, 0.1); border-radius: 4px; }
-
-  /* ИНВЕНТАРЬ (СУМКИ) - 3 СТРОКИ */
-  .bag-header { flex-wrap: wrap; }
-  .bag-header input { width: 100%; flex: none; margin-bottom: 6px; }
-  .bag-info { width: 100%; display: flex; justify-content: space-between; }
-  
-  .bag-item-main { 
-    display: grid !important;
-    grid-template-columns: 50px 1fr; /* Узкий номер, название на остаток */
-    gap: 6px; 
-    align-items: center;
-    position: relative;
-    padding-bottom: 6px;
-  }
-  
-  /* 1 строка: Номер и Название */
-  .bag-item-main .i-num { grid-column: 1; grid-row: 1; text-align: center; padding: 4px; font-size: 13px; }
-  .bag-item-main .i-name { grid-column: 2; grid-row: 1; }
-  
-  /* 2 строка: Описание (занимает 2 строки по высоте) */
-  .bag-item-main .i-desc { 
-    grid-column: 1 / span 2; 
-    grid-row: 2; 
-    min-height: 40px;
-    resize: none; /* Запрещаем тянуть вниз */
-  }
-  
-  /* 3 строка: Кол-во + Вес + Крестик + Стрелочка */
-  .bag-item-main .i-qty { 
-    grid-column: 1; 
-    grid-row: 3; 
-    width: 100%;
-    padding: 4px;
-  }
-  .bag-item-main .i-weight { 
-    grid-column: 2; 
-    grid-row: 3; 
-    width: calc(100% - 80px); /* Оставляем место под крестик и стрелку */
-    justify-self: start;
-  }
-  
-  .bag-item-toggle {
-    position: absolute;
-    bottom: 8px;
-    right: 40px;
-    padding: 4px;
-    font-size: 16px;
-    background: transparent;
-    border: none;
-  }
-
-  .bag-item-main .item-del { 
-    position: absolute;
-    bottom: 8px;
-    right: 8px;
-    background: transparent;
-    color: #ef4444;
-    font-size: 18px;
-    padding: 4px;
-    border: none;
-  }
-  
-  .sub-items { margin-left: 0; padding: 6px; }
-  .sub-item { grid-template-columns: 1fr 50px; gap: 4px; }
-  .sub-item .s-name { grid-column: 1; grid-row: 1; }
-  .sub-item .s-qty { grid-column: 2; grid-row: 1; }
-  .sub-item .s-desc { grid-column: 1 / span 2; grid-row: 2; }
-  .sub-item .sub-item-del { grid-column: 1 / span 2; grid-row: 3; justify-self: end; }
-
-  .faith-row { grid-template-columns: 1fr 1fr 30px; }
-
+  .list-card { grid-template-columns: 1fr; }
+  .bag-item-main { grid-template-columns: 1fr 1fr; } /* На телефоне поля в 2 колонки */
   .combat-grid { grid-template-columns: 1fr; }
-  .combat-list { max-height: 300px; }
+  .character-panel { grid-template-columns: 1fr !important; }
+  .sub-item { grid-template-columns: 1fr; }
 }
