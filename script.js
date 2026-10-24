@@ -1,10 +1,15 @@
 /* ============================================================
-   ЛИСТ ПЕРСОНАЖА — вся логика v5.7 (Финальная)
+   ЛИСТ ПЕРСОНАЖА — вся логика v5.8 (IndexedDB)
    ============================================================ */
 
-const STORAGE_KEY = 'absolute_world_character_v5';
+const DB_NAME = 'AbsoluteWorldCharacterDB';
+const STORE_NAME = 'characterData';
+const DB_VERSION = 1;
 const SLOTS_CONFIG = { 1: 8, 2: 7, 3: 6, 4: 5, 5: 4 };
 const FOCUS_SLOTS = 2;
+
+let db = null;
+let isAppLoading = true; // Защита от перезаписи пустыми данными при загрузке
 
 // ================= FIREBASE =================
 let isCloudLoading = false;
@@ -151,6 +156,56 @@ function toast(msg) {
   t.classList.add('show');
   clearTimeout(t._t);
   t._t = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ============================================================
+   БАЗА ДАННЫХ (IndexedDB)
+   ============================================================ */
+function initDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    
+    request.onerror = e => {
+      console.error("Ошибка открытия IndexedDB:", e);
+      reject(e);
+    };
+    
+    request.onsuccess = e => {
+      db = e.target.result;
+      resolve(db);
+    };
+    
+    request.onupgradeneeded = e => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME);
+      }
+    };
+  });
+}
+
+function saveToDB(data) {
+  return new Promise((resolve, reject) => {
+    if (!db) return reject("БД не инициализирована");
+    const transaction = db.transaction([STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.put(data, 'character');
+
+    request.onsuccess = () => resolve();
+    request.onerror = e => reject(e);
+  });
+}
+
+function loadFromDB() {
+  return new Promise((resolve, reject) => {
+    if (!db) return reject("БД не инициализирована");
+    const transaction = db.transaction([STORE_NAME], 'readonly');
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.get('character');
+
+    request.onsuccess = e => resolve(e.target.result);
+    request.onerror = e => reject(e);
+  });
 }
 
 /* ============================================================
@@ -398,7 +453,6 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
     const row = document.createElement('div');
     row.className = 'bag-item';
     
-    // Измененная структура: textarea для описания, стрелочка перенесена в основную строку
     row.innerHTML = `
       <div class="bag-item-main">
         <input type="number" class="i-num" placeholder="#" readonly>
@@ -412,35 +466,21 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
       <div class="sub-items" style="display:none"></div>
     `;
 
-        const descInput = row.querySelector('.i-desc');
+    const descInput = row.querySelector('.i-desc');
     
-    // Более надёжный авто-рост для мобильных браузеров.
-    // Используем requestAnimationFrame и двойной сброс высоты,
-    // чтобы браузер точно пересчитал scrollHeight.
     const autoResize = () => {
-      // Принудительно ставим маленькую высоту, чтобы сбросить внутренний расчет
       descInput.style.height = '1px';
-      
-      // Используем requestAnimationFrame, чтобы браузер применил style.height = '1px'
-      // и только потом вычислил scrollHeight. Без этого на мобильных scrollHeight 
-      // может возвращать неправильное значение.
       requestAnimationFrame(() => {
         descInput.style.height = (descInput.scrollHeight + 2) + 'px';
-        // Если контента нет, возвращаем минимальную высоту (36px из CSS)
         if (descInput.scrollHeight <= 36) {
            descInput.style.height = '36px';
         }
       });
     };
 
-    // Слушаем ввод
     descInput.addEventListener('input', autoResize);
-    
-    // Принудительный пересчет с задержкой (для мобильных).
-    // 50мс — когда DOM готов, 250мс — когда шрифты точно загружены.
     setTimeout(autoResize, 50);
     setTimeout(autoResize, 250);
-    // Третий вызов на случай, если Firebase подгрузит данные позже
     setTimeout(autoResize, 800);
 
     const toggle = row.querySelector('.bag-item-toggle');
@@ -1015,9 +1055,9 @@ function selectCombatItem(item) {
 function detectDamageType(str) {
   const s = str.toLowerCase();
   if (/некро/.test(s)) return 'necro';
-  if (/огон|огн/.test(s)) return 'fire';
-  if (/холод|лёд|лед/.test(s)) return 'cold';
-  if (/физ|удар|руб|кол|реза/.test(s)) return 'phys';
+  if (/\u043e\u0433\u043e\u043d|\u043e\u0433\u043d/.test(s)) return 'fire';
+  if (/\u0445\u043e\u043b\u043e\u0434|\u043b\u0451\u0434|\u043b\u0435\u0434/.test(s)) return 'cold';
+  if (/\u0444\u0438\u0437|\u0443\u0434\u0430\u0440|\u0440\u0443\u0431|\u043a\u043e\u043b|\u0440\u0435\u0437\u0430/.test(s)) return 'phys';
   return 'all';
 }
 
@@ -1178,24 +1218,48 @@ function applyData(d) {
    ============================================================ */
 let saveTimer = null;
 function autoSave() {
+  if (isAppLoading) return; // Защита от перезаписи при загрузке
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(collectData()));
-  }, 400);
+  saveTimer = setTimeout(async () => {
+    try {
+      const data = collectData();
+      await saveToDB(data);
+      console.log("Автосохранение в IndexedDB успешно.");
+    } catch (e) {
+      console.error("Ошибка автосохранения в IndexedDB:", e);
+      toast('⚠️ Ошибка сохранения');
+    }
+  }, 500);
 }
-function saveNow() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(collectData()));
-  toast('💾 Сохранено');
+
+async function saveNow() {
+  if (isAppLoading) return;
+  try {
+    const data = collectData();
+    await saveToDB(data);
+    toast('💾 Сохранено');
+  } catch (e) {
+    console.error("Ошибка сохранения в IndexedDB:", e);
+    toast('⚠️ Ошибка сохранения');
+  }
 }
-function loadFromStorage() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (raw) { try { applyData(JSON.parse(raw)); } catch (e) { console.warn(e); } }
+
+async function loadFromStorage() {
+  try {
+    const data = await loadFromDB();
+    if (data) { 
+      applyData(data); 
+    }
+  } catch (e) {
+    console.warn("Данных в IndexedDB нет или произошла ошибка:", e);
+  } finally {
+    // Снимаем блокировку после загрузки
+    setTimeout(() => { isAppLoading = false; }, 500);
+  }
 }
 
 function exportJSON() {
-  // Берем только личные данные, БЕЗ общего инвентаря
   const data = collectData();
-  
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -1206,23 +1270,37 @@ function exportJSON() {
   URL.revokeObjectURL(url);
   toast('⬇ Экспортировано');
 }
-function importJSON(file) {
+
+async function importJSON(file) {
   const reader = new FileReader();
-  reader.onload = e => {
+  reader.onload = async e => {
     try {
+      isAppLoading = true; // Блокируем сохранение на время импорта
       const data = JSON.parse(e.target.result);
       applyData(data);
-      // Общий инвентарь в облаке не трогаем
-      saveNow();
+      // Принудительно сохраняем в БД
+      await saveToDB(collectData());
       toast('⬆ Импортировано');
-    } catch (err) { toast('✖ Ошибка файла'); }
+      setTimeout(() => { isAppLoading = false; }, 500); // Разблокируем через полсекунды
+    } catch (err) { 
+      isAppLoading = false;
+      toast('✖ Ошибка файла'); 
+    }
   };
   reader.readAsText(file);
 }
 
-function resetAll() {
+async function resetAll() {
   if (!confirm('Удалить все данные персонажа? (Общий инвентарь не пострадает)')) return;
-  localStorage.removeItem(STORAGE_KEY);
+  
+  try {
+    if (db) {
+      const transaction = db.transaction([STORE_NAME], 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      store.delete('character');
+    }
+  } catch(e) { console.warn(e); }
+
   $$('[data-key], [data-skill]').forEach(el => el.value = '');
   ['subclassList','spellContainer','effectList','activeList','passiveList','bagContainer','equipList','faithThresholds'].forEach(id => {
     const el = document.getElementById(id); if (el) el.innerHTML = '';
@@ -1324,12 +1402,19 @@ function initTabs() {
 /* ============================================================
    INIT
    ============================================================ */
-function init() {
+async function init() {
+  // 1. Инициализируем базу данных
+  await initDB();
+  
+  // 2. Рисуем интерфейс
   renderSkills();
   renderSlots();
   renderFaithThresholds();
-  loadFromStorage();
   
+  // 3. Загружаем сохранения (асинхронно)
+  await loadFromStorage();
+  
+  // 4. Подключаем Firebase
   if (typeof window.startFirebaseSync === 'function') {
     window.startFirebaseSync();
   }
