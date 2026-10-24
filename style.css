@@ -186,7 +186,9 @@ body {
 input[type="text"], input[type="number"], textarea, select {
   background: #0a0f0a; border: 1px solid var(--border); border-radius: 6px;
   padding: 8px 10px; color: var(--text); font-family: inherit;
-  font-size: 14px; transition: all 0.2s ease; width: 100%; resize: vertical;
+  font-size: 14px; transition: all 0.2s ease; width: 100%; 
+  resize: none; /* Убрали стандартный уголок для растягивания */
+  overflow: hidden; /* Убрали полосы прокрутки */
 }
 input:focus, textarea:focus, select:focus {
   outline: none; border-color: var(--green);
@@ -415,10 +417,11 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   position: relative;
 }
 
-/* Сетка на ПК (ИЗМЕНЕНО: номер меньше, описание шире, кол-во/вес фиксированы) */
+/* Сетка на ПК (ИЗМЕНЕНО: номер увеличен на 50% -> 60px, убраны скроллы) */
 .bag-item-main {
   display: grid; 
-  grid-template-columns: 40px 1fr 3fr 60px 70px 36px 36px;
+  /* Номер 60px (было 40), остальное как было */
+  grid-template-columns: 60px 1fr 3fr 60px 70px 36px 36px;
   gap: 8px; align-items: center;
 }
 .bag-item-main input { padding: 6px 8px; font-size: 13px; }
@@ -614,10 +617,10 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
 
   /* Уменьшаем отступы, чтобы выиграть место по ширине */
   .bag {
-    padding: 6px; /* Было 14px */
+    padding: 6px; 
   }
   .bag-item {
-    padding: 4px; /* Было 6px 8px */
+    padding: 4px; 
   }
 
   /* Карточка предмета - все поля одной высоты */
@@ -638,7 +641,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
 
   /* 1 строка: Номер + Название */
   .bag-item-main .i-num { 
-    width: 45px; /* Чуть сузили */
+    width: 65px; /* УВЕЛИЧЕНО на 50% (было 45) */
     flex: none;
     text-align: center;
   }
@@ -647,26 +650,26 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     min-width: 100px;
   }
   
-  /* 2 строка: Описание (растягивается вниз) */
+  /* 2 строка: Описание (растягивается вниз на 100% ширины) */
   .bag-item-main .i-desc { 
     width: 100%;
     height: auto;
     min-height: 36px;
     resize: none;
     overflow-y: hidden;
-    line-height: 1.3; /* Чуть плотнее строки */
-    padding: 6px; /* Уменьшили внутренний отступ, чтобы текст был шире */
+    line-height: 1.3; 
+    padding: 6px; 
     word-break: break-word;
     margin: 0;
   }
   
   /* 3 строка: Кол-во + Вес + Стрелочка + Крестик */
   .bag-item-main .i-qty { 
-    width: 50px; /* Сузили */
+    width: 50px; 
     flex: none;
   }
   .bag-item-main .i-weight { 
-    width: 60px; /* Сузили */
+    width: 60px; 
     flex: none;
   }
   
@@ -677,7 +680,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     font-size: 16px;
     padding: 4px;
     width: auto;
-    margin-left: auto; /* прижимает стрелку и крестик вправо */
+    margin-left: auto; 
   }
   
   .bag-item-main .item-del { 
