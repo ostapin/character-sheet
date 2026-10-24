@@ -1193,31 +1193,9 @@ function loadFromStorage() {
 }
 
 function exportJSON() {
+  // Берем только личные данные, БЕЗ общего инвентаря
   const data = collectData();
-  data.sharedBags = [];
-  $$('#sharedBagContainer .bag').forEach(bag => {
-      const items = [];
-      bag.querySelectorAll('.bag-item').forEach(r => {
-        const subs = [];
-        r.querySelectorAll('.sub-item').forEach(s => {
-          subs.push({
-            name: s.querySelector('.s-name').value,
-            qty: s.querySelector('.s-qty').value,
-            desc: s.querySelector('.s-desc').value
-          });
-        });
-        items.push({
-          num: r.querySelector('.i-num').value,
-          name: r.querySelector('.i-name').value,
-          desc: r.querySelector('.i-desc').value,
-          qty: r.querySelector('.i-qty').value,
-          weight: r.querySelector('.i-weight').value,
-          subs
-        });
-      });
-      data.sharedBags.push({ name: bag.querySelector('.bag-name').value, items });
-  });
-
+  
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -1234,10 +1212,7 @@ function importJSON(file) {
     try {
       const data = JSON.parse(e.target.result);
       applyData(data);
-      if (data.sharedBags && data.sharedBags.length > 0) {
-          renderSharedBags(data.sharedBags);
-          saveSharedToCloud();
-      }
+      // Общий инвентарь в облаке не трогаем
       saveNow();
       toast('⬆ Импортировано');
     } catch (err) { toast('✖ Ошибка файла'); }
