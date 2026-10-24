@@ -445,7 +445,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   border-radius: 6px; display: flex; flex-direction: column; gap: 6px;
 }
 .sub-item { display: grid; grid-template-columns: 1fr 70px 1.5fr 30px; gap: 6px; align-items: center; }
-.sub-item input { padding: 5px 7px; font-size: 13px; }
+.sub-item input { padding: 5px 7px; font-size: 12px; }
 .sub-item-del { background: transparent; border: none; color: #7f1d1d; cursor: pointer; font-size: 14px; }
 .sub-item-del:hover { color: #ef4444; }
 .total-weight {
@@ -564,7 +564,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
 #inventoryView.hidden { display: none; }
 
 /* ============================================================
-   МОБИЛЬНАЯ ВЕРСИЯ (ТЕЛЕФОНЫ) - ИСПРАВЛЕНИЯ ПОДКЛАССОВ И БОНУСОВ
+   МОБИЛЬНАЯ ВЕРСИЯ (ТЕЛЕФОНЫ)
    ============================================================ */
 @media (max-width: 900px) {
   .topbar { padding: 10px 12px; flex-direction: column; align-items: stretch; gap: 10px; }
@@ -580,6 +580,16 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .character-photo .photo-box { min-width: 150px; min-height: 150px; }
   .character-photo .photo-box img { max-width: 100%; max-height: 300px; }
 
+  /* ИСПРАВЛЕНИЕ: Общие характеристики и Подклассы на всю ширину */
+  .card-half { 
+    display: block !important; 
+    width: 100%;
+  }
+  .card-half .card {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
   .stat-grid-2 { grid-template-columns: 1fr; }
   .stat-grid { grid-template-columns: 1fr 1fr; }
   .skill-columns { grid-template-columns: 1fr; }
@@ -593,20 +603,6 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .list-card .card-img-box { min-height: 180px; }
   .list-card .list-del { justify-self: end; }
 
-  /* === ИСПРАВЛЕНИЕ ПОДКЛАССОВ === */
-  .subclass-head {
-    display: flex;
-    flex-wrap: nowrap;
-    align-items: center;
-    width: 100%;
-  }
-  .subclass-head input {
-    flex: 1;
-    min-width: 0; /* Разрешаем полю сжиматься и растягиваться */
-    width: 100%;
-  }
-
-  /* === ИСПРАВЛЕНИЕ БОНУСОВ (КРЕСТИКИ) === */
   .bonus-row { 
     display: flex;
     flex-wrap: wrap;
@@ -616,7 +612,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   }
   .bonus-row select,
   .bonus-row input {
-    flex: 1 1 100px; /* Занимают равную ширину */
+    flex: 1 1 100px;
     min-width: 0;
   }
   .bonus-row .bonus-del { 
