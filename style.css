@@ -564,7 +564,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
 #inventoryView.hidden { display: none; }
 
 /* ============================================================
-   МОБИЛЬНАЯ ВЕРСИЯ (ТЕЛЕФОНЫ) - ИСПРАВЛЕНА ШИРИНА
+   МОБИЛЬНАЯ ВЕРСИЯ (ТЕЛЕФОНЫ)
    ============================================================ */
 @media (max-width: 900px) {
   .topbar { padding: 10px 12px; flex-direction: column; align-items: stretch; gap: 10px; }
@@ -574,7 +574,6 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .actions .btn { padding: 8px 4px; font-size: 12px; }
 
   .grid { padding: 0 6px; margin: 10px auto; gap: 8px; }
-  /* Убираем отступы у карточки, чтобы инвентарь был от края до края */
   .card { padding: 4px; } 
 
   .character-panel { grid-template-columns: 1fr !important; }
@@ -599,15 +598,14 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
 
   /* ИНВЕНТАРЬ (СУМКИ) */
   
-  /* Убираем отступы у самой сумки */
+  /* Убираем лишние отступы по бокам, чтобы карточки прижались к краям */
   .bag { 
-    padding: 4px; 
+    padding: 8px 0; 
     margin-bottom: 8px;
   }
   
-  /* Убираем отступы у карточки предмета */
   .bag-item {
-    padding: 4px;
+    padding: 4px 0;
   }
 
   /* Шапка сумки */
@@ -617,7 +615,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     align-items: center;
     gap: 6px;
     margin-bottom: 8px;
-    padding: 0 4px;
+    padding: 0 4px; /* Небольшой отступ для текста шапки */
   }
   .bag-header input { width: 100%; flex: none; margin-bottom: 4px; }
   .bag-header .bag-info {
@@ -633,7 +631,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     background: rgba(185, 28, 28, 0.1);
   }
 
-  /* Карточка предмета (ВОЗВРАЩАЕМ КАК БЫЛО) */
+  /* Карточка предмета */
   .bag-item-main { 
     display: flex;
     flex-wrap: wrap;
@@ -649,7 +647,6 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     border-radius: 6px;
   }
 
-  /* 1 строка: Номер + Название */
   .bag-item-main .i-num { 
     width: 65px; 
     flex: none;
@@ -660,7 +657,6 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     min-width: 100px;
   }
   
-  /* 2 строка: Описание (КАК БЫЛО, без !important) */
   .bag-item-main .i-desc { 
     width: 100%;
     height: auto;
@@ -673,7 +669,6 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     margin: 0;
   }
   
-  /* 3 строка: Кол-во + Вес + Стрелочка + Крестик */
   .bag-item-main .i-qty { 
     width: 50px; 
     flex: none;
