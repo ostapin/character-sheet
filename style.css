@@ -425,7 +425,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
 }
 .bag-item-main input { padding: 6px 8px; font-size: 13px; }
 
-/* ЖЕСТКОЕ ИСПРАВЛЕНИЕ ДЛЯ ПОЛЯ ОПИСАНИЯ НА ПК (ОСТАВЛЯЕМ КАК РАБОТАЕТ) */
+/* ЖЕСТКОЕ ИСПРАВЛЕНИЕ ДЛЯ ПОЛЯ ОПИСАНИЯ НА ПК */
 .bag-item-main .i-desc {
   width: 100% !important;
   min-width: 0;
@@ -573,14 +573,16 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
   .actions .btn { padding: 8px 4px; font-size: 12px; }
 
-  .grid { padding: 0 6px; margin: 10px auto; gap: 8px; }
-  .card { padding: 4px; } 
-
-  .character-panel { grid-template-columns: 1fr !important; }
-  .character-photo .photo-box { min-width: 150px; min-height: 150px; }
-  .character-photo .photo-box img { max-width: 100%; max-height: 300px; }
-
-  /* ИСПРАВЛЕНИЕ: Общие характеристики и Подклассы на всю ширину */
+  /* Принудительно делаем одну колонку для всего */
+  .grid { 
+    display: flex !important;
+    flex-direction: column;
+    padding: 0 6px; 
+    margin: 10px auto; 
+    gap: 8px; 
+  }
+  
+  /* Карточки Общих характеристик и Подклассов занимают всю ширину */
   .card-half { 
     display: block !important; 
     width: 100%;
@@ -589,6 +591,12 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     width: 100%;
     margin-bottom: 8px;
   }
+
+  .card { padding: 6px; } 
+
+  .character-panel { grid-template-columns: 1fr !important; }
+  .character-photo .photo-box { min-width: 150px; min-height: 150px; }
+  .character-photo .photo-box img { max-width: 100%; max-height: 300px; }
 
   .stat-grid-2 { grid-template-columns: 1fr; }
   .stat-grid { grid-template-columns: 1fr 1fr; }
@@ -603,6 +611,20 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .list-card .card-img-box { min-height: 180px; }
   .list-card .list-del { justify-self: end; }
 
+  /* === ИСПРАВЛЕНИЕ ПОДКЛАССОВ === */
+  .subclass-head {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    width: 100%;
+  }
+  .subclass-head input {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+  }
+
+  /* === ИСПРАВЛЕНИЕ БОНУСОВ === */
   .bonus-row { 
     display: flex;
     flex-wrap: wrap;
@@ -622,13 +644,8 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   }
 
   /* ИНВЕНТАРЬ (СУМКИ) */
-  .bag { 
-    padding: 8px 0; 
-    margin-bottom: 8px;
-  }
-  .bag-item {
-    padding: 4px 0;
-  }
+  .bag { padding: 8px 0; margin-bottom: 8px; }
+  .bag-item { padding: 4px 0; }
 
   .bag-header {
     display: flex;
@@ -652,12 +669,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     background: rgba(185, 28, 28, 0.1);
   }
 
-  .bag-item-main { 
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px; 
-    align-items: center;
-  }
+  .bag-item-main { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
   
   .bag-item-main input,
   .bag-item-main textarea {
@@ -667,15 +679,8 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     border-radius: 6px;
   }
 
-  .bag-item-main .i-num { 
-    width: 65px; 
-    flex: none;
-    text-align: center;
-  }
-  .bag-item-main .i-name { 
-    flex: 1;
-    min-width: 100px;
-  }
+  .bag-item-main .i-num { width: 65px; flex: none; text-align: center; }
+  .bag-item-main .i-name { flex: 1; min-width: 100px; }
   
   .bag-item-main .i-desc { 
     width: 100%;
@@ -689,14 +694,8 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     margin: 0;
   }
   
-  .bag-item-main .i-qty { 
-    width: 50px; 
-    flex: none;
-  }
-  .bag-item-main .i-weight { 
-    width: 60px; 
-    flex: none;
-  }
+  .bag-item-main .i-qty { width: 50px; flex: none; }
+  .bag-item-main .i-weight { width: 60px; flex: none; }
   
   .bag-item-main .bag-item-toggle {
     background: transparent;
