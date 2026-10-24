@@ -1,5 +1,5 @@
 /* ============================================================
-   ЛИСТ ПЕРСОНАЖА — вся логика v5.9 (Сворачивание блоков)
+   ЛИСТ ПЕРСОНАЖА — вся логика v6.0 (С заметками)
    ============================================================ */
 
 const DB_NAME = 'AbsoluteWorldCharacterDB';
@@ -9,7 +9,7 @@ const SLOTS_CONFIG = { 1: 8, 2: 7, 3: 6, 4: 5, 5: 4 };
 const FOCUS_SLOTS = 2;
 
 let db = null;
-let isAppLoading = true; // Защита от перезаписи пустыми данными при загрузке
+let isAppLoading = true;
 
 // ================= FIREBASE =================
 let isCloudLoading = false;
@@ -43,7 +43,6 @@ async function saveSharedToCloud() {
         });
 
         await window.firebaseSetDoc(inventoryDocRef, { bags: bagsData });
-        console.log("Общий инвентарь сохранен в облако.");
     } catch (error) {
         console.error("Ошибка сохранения в облако: ", error);
     }
@@ -164,22 +163,11 @@ function toast(msg) {
 function initDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
-    
-    request.onerror = e => {
-      console.error("Ошибка открытия IndexedDB:", e);
-      reject(e);
-    };
-    
-    request.onsuccess = e => {
-      db = e.target.result;
-      resolve(db);
-    };
-    
+    request.onerror = e => reject(e);
+    request.onsuccess = e => { db = e.target.result; resolve(db); };
     request.onupgradeneeded = e => {
       const db = e.target.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME);
-      }
+      if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
     };
   });
 }
@@ -188,9 +176,7 @@ function saveToDB(data) {
   return new Promise((resolve, reject) => {
     if (!db) return reject("БД не инициализирована");
     const transaction = db.transaction([STORE_NAME], 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
-    const request = store.put(data, 'character');
-
+    const request = transaction.objectStore(STORE_NAME).put(data, 'character');
     request.onsuccess = () => resolve();
     request.onerror = e => reject(e);
   });
@@ -200,16 +186,14 @@ function loadFromDB() {
   return new Promise((resolve, reject) => {
     if (!db) return reject("БД не инициализирована");
     const transaction = db.transaction([STORE_NAME], 'readonly');
-    const store = transaction.objectStore(STORE_NAME);
-    const request = store.get('character');
-
+    const request = transaction.objectStore(STORE_NAME).get('character');
     request.onsuccess = e => resolve(e.target.result);
     request.onerror = e => reject(e);
   });
 }
 
 /* ============================================================
-   НАВЫКИ
+   НАВЫКИ И БОНУСЫ
    ============================================================ */
 function renderSkills() {
   Object.entries(SKILLS).forEach(([group, list]) => {
@@ -225,9 +209,6 @@ function renderSkills() {
   });
 }
 
-/* ============================================================
-   БОНУСЫ
-   ============================================================ */
 function createBonusRow(data = {}) {
   const div = document.createElement('div');
   div.className = 'bonus-row';
@@ -271,6 +252,26 @@ function createBonusBlock(initial = []) {
     list.appendChild(createBonusRow());
     autoSave();
   };
+  return div;
+}
+
+/* ============================================================
+   ГЛОБАЛЬНЫЕ БОНУСЫ (НОВАЯ ПАНЕЛЬ)
+   ============================================================ */
+function createGlobalBonusRow(text = '') {
+  const div = document.createElement('div');
+  div.className = 'global-bonus-row';
+  div.style.display = 'flex';
+  div.style.gap = '8px';
+  div.style.alignItems = 'center';
+  
+  div.innerHTML = `
+    <input type="text" class="g-bonus-text" placeholder="Например: Урон огня +1д6" value="${text}" style="flex: 1;">
+    <button class="bonus-del" title="Удалить" style="font-size: 18px;">✖</button>
+  `;
+  
+  div.querySelector('.bonus-del').onclick = () => { div.remove(); autoSave(); };
+  div.querySelector('input').addEventListener('input', autoSave);
   return div;
 }
 
@@ -416,7 +417,7 @@ function createSubclass(data = {}) {
 }
 
 /* ============================================================
-   СУМКИ (ИНВЕНТАРЬ) с АВТО-НУМЕРАЦИЕЙ
+   СУМКИ (ИНВЕНТАРЬ)
    ============================================================ */
 function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
   const div = document.createElement('div');
@@ -466,14 +467,11 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
     `;
 
     const descInput = row.querySelector('.i-desc');
-    
     const autoResize = () => {
       descInput.style.height = '1px';
       requestAnimationFrame(() => {
         descInput.style.height = (descInput.scrollHeight + 2) + 'px';
-        if (descInput.scrollHeight <= 36) {
-           descInput.style.height = '36px';
-        }
+        if (descInput.scrollHeight <= 36) descInput.style.height = '36px';
       });
     };
 
@@ -499,9 +497,7 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
       subBox.appendChild(s);
     }
 
-    if (item.subs && item.subs.length) {
-      item.subs.forEach(addSubItem);
-    }
+    if (item.subs && item.subs.length) item.subs.forEach(addSubItem);
 
     let addSubBtn = null;
     function ensureAddBtn() {
@@ -525,11 +521,7 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
 
     row.querySelector('.item-del').onclick = () => { 
       if(confirm('Удалить предмет?')) {
-        row.remove(); 
-        renumberItems();
-        updateBagStats(); 
-        autoSave(); 
-        triggerUpdate(); 
+        row.remove(); renumberItems(); updateBagStats(); autoSave(); triggerUpdate(); 
       }
     };
     row.querySelectorAll('.bag-item-main input').forEach(el => el.addEventListener('input', () => { updateBagStats(); autoSave(); triggerUpdate(); }));
@@ -555,17 +547,11 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
   (data.items || []).forEach(addItem);
 
   div.querySelector('.bag-add').onclick = () => { addItem(); autoSave(); triggerUpdate(); };
-  
   div.querySelector('.bag-del').onclick = () => { 
-    if (confirm('Вы уверены, что хотите удалить ВСЮ сумку со всем содержимым?')) {
-      div.remove(); 
-      triggerUpdate(); 
-      autoSave(); 
-    }
+    if (confirm('Вы уверены, что хотите удалить ВСЮ сумку?')) { div.remove(); triggerUpdate(); autoSave(); }
   };
   div.querySelector('.bag-name').addEventListener('input', () => { autoSave(); if(isCloud) saveSharedToCloud(); });
 
-  div._updateStats = updateBagStats;
   renumberItems();
   updateBagStats();
   return div;
@@ -608,9 +594,7 @@ function renderSlots() {
     </div>
   `;
   const focusStrip = focusBlock.querySelector('.slots-strip');
-  for (let i = 1; i <= FOCUS_SLOTS; i++) {
-    focusStrip.appendChild(createSlotEl(`focus-${i}`, i, false));
-  }
+  for (let i = 1; i <= FOCUS_SLOTS; i++) focusStrip.appendChild(createSlotEl(`focus-${i}`, i, false));
   focusBlock.querySelector('.arrow-left').onclick = () => focusStrip.scrollBy({ left: -470, behavior: 'smooth' });
   focusBlock.querySelector('.arrow-right').onclick = () => focusStrip.scrollBy({ left: 470, behavior: 'smooth' });
   box.appendChild(focusBlock);
@@ -627,9 +611,7 @@ function renderSlots() {
       </div>
     `;
     const strip = block.querySelector('.slots-strip');
-    for (let i = 1; i <= count; i++) {
-      strip.appendChild(createSlotEl(`${circle}-${i}`, i, true));
-    }
+    for (let i = 1; i <= count; i++) strip.appendChild(createSlotEl(`${circle}-${i}`, i, true));
     block.querySelector('.arrow-left').onclick = () => strip.scrollBy({ left: -470, behavior: 'smooth' });
     block.querySelector('.arrow-right').onclick = () => strip.scrollBy({ left: 470, behavior: 'smooth' });
     box.appendChild(block);
@@ -673,12 +655,9 @@ function createSlotEl(slotId, num, canUse) {
     if (!f) return;
     const reader = new FileReader();
     reader.onload = ev => {
-      img.src = ev.target.result;
-      img.style.display = 'block';
-      ph.style.display = 'none';
-      clear.style.display = 'block';
-      buttons.style.display = 'flex';
-      slot.classList.remove('used');
+      img.src = ev.target.result; img.style.display = 'block';
+      ph.style.display = 'none'; clear.style.display = 'block';
+      buttons.style.display = 'flex'; slot.classList.remove('used');
       autoSave();
     };
     reader.readAsDataURL(f);
@@ -686,35 +665,26 @@ function createSlotEl(slotId, num, canUse) {
 
   clear.addEventListener('click', e => {
     e.stopPropagation();
-    img.src = '';
-    img.style.display = 'none';
-    ph.style.display = 'block';
-    clear.style.display = 'none';
-    buttons.style.display = 'none';
-    slot.classList.remove('used');
+    img.src = ''; img.style.display = 'none'; ph.style.display = 'block';
+    clear.style.display = 'none'; buttons.style.display = 'none';
+    slot.classList.remove('used'); autoSave();
+  });
+
+  if (useBtn) useBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    slot.classList.toggle('used');
+    useBtn.textContent = slot.classList.contains('used') ? '↺ Откат' : '✓ Использовать';
+    toast(slot.classList.contains('used') ? '✓ Использовано' : '↺ Откат');
     autoSave();
   });
 
-  if (useBtn) {
-    useBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      slot.classList.toggle('used');
-      useBtn.textContent = slot.classList.contains('used') ? '↺ Откат' : '✓ Использовать';
-      toast(slot.classList.contains('used') ? '✓ Использовано' : '↺ Откат');
-      autoSave();
-    });
-  }
-
-  rollBtn.addEventListener('click', e => {
-    e.stopPropagation();
-    quickRoll();
-  });
+  rollBtn.addEventListener('click', e => { e.stopPropagation(); quickRoll(); });
 
   return slot;
 }
 
 /* ============================================================
-   ПАРСЕР КУБИКОВ
+   ПАРСЕР КУБИКОВ И РАСЧЕТЫ
    ============================================================ */
 function parseDice(str) {
   if (!str) return null;
@@ -726,9 +696,8 @@ function parseDice(str) {
     const sign = p.startsWith('-') ? -1 : 1;
     const body = p.replace(/^[+-]/, '');
     const m = body.match(/^(\d+)d(\d+)$/);
-    if (m) {
-      result.dice.push({ count: parseInt(m[1]) * sign, sides: parseInt(m[2]) });
-    } else {
+    if (m) result.dice.push({ count: parseInt(m[1]) * sign, sides: parseInt(m[2]) });
+    else {
       const num = parseFloat(body);
       if (!isNaN(num)) result.flat += num * sign;
     }
@@ -736,17 +705,12 @@ function parseDice(str) {
   return result;
 }
 
-/* ============================================================
-   РАСЧЁТ БОНУСОВ
-   ============================================================ */
 function gatherBonuses() {
   const all = [];
   $$('.bonus-row').forEach(row => {
     const target = row.querySelector('.bonus-target').value;
     const value = row.querySelector('.bonus-value').value;
-    const condition = row.querySelector('.bonus-cond').value;
     if (!value) return;
-
     let source = 'Неизвестно';
     const listCard = row.closest('.list-card');
     if (listCard) {
@@ -756,12 +720,8 @@ function gatherBonuses() {
       source = `${kinds[kind] || 'Карточка'}: ${name || '(без имени)'}`;
     }
     const subclass = row.closest('.subclass');
-    if (subclass) {
-      const name = subclass.querySelector('.sc-name')?.value;
-      source = `Подкласс: ${name || '(без имени)'}`;
-    }
-
-    all.push({ target, value, condition, source });
+    if (subclass) source = `Подкласс: ${subclass.querySelector('.sc-name')?.value || '(без имени)'}`;
+    all.push({ target, value, source });
   });
   return all;
 }
@@ -773,7 +733,6 @@ function recalcAll() {
     defense: parseFloat($('[data-key="defense"]')?.value) || 0,
     speed: parseFloat($('[data-key="speed"]')?.value) || 0
   };
-
   const totals = { hp: bases.hp, defense: bases.defense, speed: bases.speed };
   const skillTotals = {};
   ALL_SKILLS.forEach(s => skillTotals[s.key] = parseFloat($(`[data-skill="${s.key}"]`)?.value) || 0);
@@ -800,9 +759,6 @@ function recalcAll() {
   });
 }
 
-/* ============================================================
-   РАСШИФРОВКА ИТОГА
-   ============================================================ */
 function showBreakdown(target, targetLabel) {
   const bonuses = gatherBonuses();
   const modal = $('#breakdownModal');
@@ -810,52 +766,35 @@ function showBreakdown(target, targetLabel) {
   const body = $('#breakdownBody');
 
   title.textContent = 'Расшифровка: ' + targetLabel;
-
   let base = 0;
   if (target === 'hp') base = parseFloat($('[data-key="hp"]')?.value) || 0;
   if (target === 'defense') base = parseFloat($('[data-key="defense"]')?.value) || 0;
   if (target === 'speed') base = parseFloat($('[data-key="speed"]')?.value) || 0;
-  if (target.startsWith('skill_')) {
-    const key = target.replace('skill_', '');
-    base = parseFloat($(`[data-skill="${key}"]`)?.value) || 0;
-  }
+  if (target.startsWith('skill_')) base = parseFloat($(`[data-skill="${target.replace('skill_', '')}"]`)?.value) || 0;
 
-  const rows = [];
+  const rows = [{ label: 'База', value: base, isBase: true }];
   let total = base;
-  rows.push({ label: 'База', value: base, isBase: true });
 
   bonuses.forEach(b => {
     if (b.target === target) {
       const p = parseDice(b.value);
-      if (p) {
-        total += p.flat;
-        rows.push({ label: b.source + (b.condition !== 'all' ? ` [${b.condition}]` : ''), value: p.flat });
-      }
+      if (p) { total += p.flat; rows.push({ label: b.source, value: p.flat }); }
     }
   });
 
   if (rows.length === 1) {
-    body.innerHTML = `<div class="breakdown-empty">Нет бонусов к этой характеристике</div>`;
+    body.innerHTML = `<div class="breakdown-empty">Нет бонусов</div>`;
   } else {
     body.innerHTML = rows.map(r => `
       <div class="breakdown-row ${r.isBase ? 'base' : ''}">
         <span>${r.label}</span>
         <span>${r.value > 0 && !r.isBase ? '+' : ''}${r.value}</span>
       </div>
-    `).join('') + `
-      <div class="breakdown-row">
-        <span>ИТОГО</span>
-        <span>${total}</span>
-      </div>
-    `;
+    `).join('') + `<div class="breakdown-row"><span>ИТОГО</span><span>${total}</span></div>`;
   }
-
   modal.classList.add('open');
 }
 
-/* ============================================================
-   ПОРОГИ ВЕРЫ
-   ============================================================ */
 function createFaithRow(data = {}) {
   const div = document.createElement('div');
   div.className = 'faith-row';
@@ -881,24 +820,16 @@ function getFaithBonus(faith) {
     min: parseFloat(r.querySelector('.f-min').value) || 0,
     dice: r.querySelector('.f-dice').value
   })).sort((a, b) => b.min - a.min);
-
-  for (const r of rows) {
-    if (faith >= r.min) return r.dice;
-  }
+  for (const r of rows) if (faith >= r.min) return r.dice;
   return '';
 }
 
 /* ============================================================
-   БРОСОК
+   БРОСОК И БОЙ
    ============================================================ */
 function rollDice(count, sides) {
-  let total = 0;
-  const rolls = [];
-  for (let i = 0; i < count; i++) {
-    const r = Math.floor(Math.random() * sides) + 1;
-    rolls.push(r);
-    total += r;
-  }
+  let total = 0; const rolls = [];
+  for (let i = 0; i < count; i++) { const r = Math.floor(Math.random() * sides) + 1; rolls.push(r); total += r; }
   return { total, rolls };
 }
 
@@ -907,8 +838,7 @@ function quickRoll() {
   if (!formula) return;
   const p = parseDice(formula);
   if (!p) { toast('Не понял формулу'); return; }
-  let total = p.flat;
-  let allRolls = [];
+  let total = p.flat; let allRolls = [];
   p.dice.forEach(d => {
     const r = rollDice(Math.abs(d.count), d.sides);
     total += r.total * Math.sign(d.count);
@@ -917,71 +847,37 @@ function quickRoll() {
   alert(`🎲 ${formula}\n\n${allRolls.join('\n')}\n\nИтог: ${total}`);
 }
 
-/* ============================================================
-   БОЙ
-   ============================================================ */
 function openCombat() {
-  const modal = $('#combatModal');
-  modal.classList.add('open');
-
+  const modal = $('#combatModal'); modal.classList.add('open');
   const body = $('#combatBody');
   body.innerHTML = `
     <div class="combat-grid">
-      <div>
-        <h3 style="color:var(--green);margin-bottom:12px;text-transform:uppercase;letter-spacing:1.5px;font-size:14px">Твои атаки</h3>
-        <div class="combat-list" id="combatList"></div>
-      </div>
-      <div>
-        <div class="combat-result" id="combatResult">
-          <div class="combat-empty">Выбери атаку слева</div>
-        </div>
-      </div>
+      <div><h3 style="color:var(--green);margin-bottom:12px;">Твои атаки</h3><div class="combat-list" id="combatList"></div></div>
+      <div><div class="combat-result" id="combatResult"><div class="combat-empty">Выбери атаку слева</div></div></div>
     </div>
   `;
-
-  const list = $('#combatList');
-  const items = [];
+  const list = $('#combatList'); const items = [];
 
   $$('.slot').forEach(slot => {
     const img = slot.querySelector('img');
-    if (img && img.src && img.src.startsWith('data:')) {
-      items.push({
-        type: 'spell',
-        slotId: slot.dataset.slotId,
-        name: `Ячейка ${slot.dataset.slotId}`,
-        damage: ''
-      });
-    }
+    if (img && img.src && img.src.startsWith('data:')) items.push({ type: 'spell', slotId: slot.dataset.slotId, name: `Ячейка ${slot.dataset.slotId}`, damage: '' });
   });
-
   $$('#equipList .list-card').forEach(card => {
-    const dmg = card.querySelector('.f-damage')?.value;
-    const name = card.querySelector('.f-name')?.value;
+    const dmg = card.querySelector('.f-damage')?.value; const name = card.querySelector('.f-name')?.value;
     if (dmg) items.push({ type: 'equip', name: name || 'Снаряжение', damage: dmg });
   });
-
   $$('#spellContainer .list-card').forEach(card => {
-    const dmg = card.querySelector('.f-damage')?.value;
-    const name = card.querySelector('.f-name')?.value;
+    const dmg = card.querySelector('.f-damage')?.value; const name = card.querySelector('.f-name')?.value;
     if (dmg) items.push({ type: 'spell-list', name: name || 'Заклинание', damage: dmg });
   });
 
-  if (!items.length) {
-    list.innerHTML = `<div class="combat-empty">Нет атак</div>`;
-    return;
-  }
+  if (!items.length) { list.innerHTML = `<div class="combat-empty">Нет атак</div>`; return; }
 
   items.forEach(it => {
-    const div = document.createElement('div');
-    div.className = 'combat-item';
-    div.innerHTML = `
-      <div class="combat-item-name">${it.type === 'equip' ? '⚔ ' : '🔮 '}${it.name}</div>
-      <div class="combat-item-sub">${it.damage || '— урон не указан —'}</div>
-    `;
+    const div = document.createElement('div'); div.className = 'combat-item';
+    div.innerHTML = `<div class="combat-item-name">${it.type === 'equip' ? '⚔ ' : '🔮 '}${it.name}</div><div class="combat-item-sub">${it.damage || '— урон не указан —'}</div>`;
     div.onclick = () => {
-      $$('.combat-item').forEach(x => x.classList.remove('active'));
-      div.classList.add('active');
-      selectCombatItem(it);
+      $$('.combat-item').forEach(x => x.classList.remove('active')); div.classList.add('active'); selectCombatItem(it);
     };
     list.appendChild(div);
   });
@@ -995,10 +891,8 @@ function selectCombatItem(item) {
     if (!damageFormula) { result.innerHTML = `<div class="combat-empty">Урон не указан</div>`; return; }
     item.damage = damageFormula;
   }
-
   const dmgType = detectDamageType(damageFormula);
-  const bonuses = gatherBonuses();
-  const mods = [];
+  const bonuses = gatherBonuses(); const mods = [];
 
   bonuses.forEach(b => {
     if (b.target === 'dmg_all') mods.push({ name: 'Бонус', value: b.value });
@@ -1006,9 +900,6 @@ function selectCombatItem(item) {
     if (b.target === 'dmg_fire' && dmgType === 'fire') mods.push({ name: 'Бонус (огонь)', value: b.value });
     if (b.target === 'dmg_cold' && dmgType === 'cold') mods.push({ name: 'Бонус (холод)', value: b.value });
     if (b.target === 'dmg_phys' && dmgType === 'phys') mods.push({ name: 'Бонус (физ)', value: b.value });
-    if (b.condition && b.condition !== 'all' && b.condition === dmgType) {
-      mods.push({ name: 'Бонус (условие)', value: b.value });
-    }
   });
 
   if (dmgType === 'necro') {
@@ -1022,8 +913,7 @@ function selectCombatItem(item) {
   mods.forEach(m => formulaText += ` + <span class="mod">${m.value} (${m.name})</span>`);
 
   result.innerHTML = `
-    <h3>${item.name}</h3>
-    <div class="combat-formula">${formulaText}</div>
+    <h3>${item.name}</h3><div class="combat-formula">${formulaText}</div>
     <div class="combat-total" id="combatTotal">0<small>нажми кнопку, чтобы бросить</small></div>
     <button class="combat-roll-btn" id="combatRollBtn">🎲 БРОСИТЬ</button>
   `;
@@ -1031,147 +921,104 @@ function selectCombatItem(item) {
   $('#combatRollBtn').onclick = () => {
     let total = 0;
     if (baseDice) {
-      baseDice.dice.forEach(d => {
-        const r = rollDice(Math.abs(d.count), d.sides);
-        total += r.total * Math.sign(d.count);
-      });
+      baseDice.dice.forEach(d => { const r = rollDice(Math.abs(d.count), d.sides); total += r.total * Math.sign(d.count); });
       total += baseDice.flat;
     }
     mods.forEach(m => {
-      const p = parseDice(m.value);
-      if (!p) return;
-      p.dice.forEach(d => {
-        const r = rollDice(Math.abs(d.count), d.sides);
-        total += r.total * Math.sign(d.count);
-      });
+      const p = parseDice(m.value); if (!p) return;
+      p.dice.forEach(d => { const r = rollDice(Math.abs(d.count), d.sides); total += r.total * Math.sign(d.count); });
       if (p.flat) total += p.flat;
     });
-    $('#combatTotal').innerHTML = `${total}<small>итого урона</small>`;
-    toast(`🎲 ${total} урона`);
+    $('#combatTotal').innerHTML = `${total}<small>итого урона</small>`; toast(`🎲 ${total} урона`);
   };
 }
 
 function detectDamageType(str) {
   const s = str.toLowerCase();
   if (/некро/.test(s)) return 'necro';
-  if (/\u043e\u0433\u043e\u043d|\u043e\u0433\u043d/.test(s)) return 'fire';
-  if (/\u0445\u043e\u043b\u043e\u0434|\u043b\u0451\u0434|\u043b\u0435\u0434/.test(s)) return 'cold';
-  if (/\u0444\u0438\u0437|\u0443\u0434\u0430\u0440|\u0440\u0443\u0431|\u043a\u043e\u043b|\u0440\u0435\u0437\u0430/.test(s)) return 'phys';
+  if (/огон|огн/.test(s)) return 'fire';
+  if (/холод|лёд|лед/.test(s)) return 'cold';
+  if (/физ|удар|руб|кол|реза/.test(s)) return 'phys';
   return 'all';
 }
 
 /* ============================================================
-   СБОР ДАННЫХ
+   СБОР И ЗАГРУЗКА ДАННЫХ
    ============================================================ */
 function collectBonuses(container) {
   const bonuses = [];
   container.querySelectorAll('.bonus-row').forEach(row => {
-    bonuses.push({
-      target: row.querySelector('.bonus-target').value,
-      value: row.querySelector('.bonus-value').value,
-      condition: row.querySelector('.bonus-cond').value
-    });
+    bonuses.push({ target: row.querySelector('.bonus-target').value, value: row.querySelector('.bonus-value').value, condition: row.querySelector('.bonus-cond').value });
   });
   return bonuses;
 }
 
 function collectData() {
   const data = {
-    fields: {}, skills: {}, subclasses: [],
-    spells: [], effects: [], actives: [], passives: [], equip: [],
-    bags: [], slots: {}, faith: [],
+    fields: {}, skills: {}, subclasses: [], spells: [], effects: [], actives: [], passives: [], equip: [],
+    bags: [], slots: {}, faith: [], globalBonuses: [],
     photo: $('#photoImg') && $('#photoImg').src && $('#photoImg').src.startsWith('data:') ? $('#photoImg').src : ''
   };
   $$('[data-key]').forEach(el => data.fields[el.dataset.key] = el.value);
   $$('[data-skill]').forEach(el => data.skills[el.dataset.skill] = el.value);
 
+  $$('#globalBonusesList input').forEach(el => {
+    if (el.value.trim()) data.globalBonuses.push(el.value);
+  });
+
   $$('#subclassList .subclass').forEach(sc => {
-    data.subclasses.push({
-      name: sc.querySelector('.sc-name').value,
-      desc: sc.querySelector('.sc-desc').value,
-      bonuses: collectBonuses(sc)
-    });
+    data.subclasses.push({ name: sc.querySelector('.sc-name').value, desc: sc.querySelector('.sc-desc').value, bonuses: collectBonuses(sc) });
   });
 
   const collectList = (id, kind) => {
     $$(`#${id} .list-card`).forEach(card => {
       const img = card.querySelector('img');
       data[kind].push({
-        circle: card.querySelector('.f-circle')?.value,
-        name: card.querySelector('.f-name').value,
-        damage: card.querySelector('.f-damage')?.value || '',
-        desc: card.querySelector('.f-desc').value,
-        img: img && img.src && img.src.startsWith('data:') ? img.src : '',
-        bonuses: collectBonuses(card)
+        circle: card.querySelector('.f-circle')?.value, name: card.querySelector('.f-name').value,
+        damage: card.querySelector('.f-damage')?.value || '', desc: card.querySelector('.f-desc').value,
+        img: img && img.src && img.src.startsWith('data:') ? img.src : '', bonuses: collectBonuses(card)
       });
     });
   };
-  collectList('spellContainer', 'spells');
-  collectList('effectList', 'effects');
-  collectList('activeList', 'actives');
-  collectList('passiveList', 'passives');
-  collectList('equipList', 'equip');
+  collectList('spellContainer', 'spells'); collectList('effectList', 'effects');
+  collectList('activeList', 'actives'); collectList('passiveList', 'passives'); collectList('equipList', 'equip');
 
   $$('#bagContainer .bag').forEach(bag => {
     const items = [];
     bag.querySelectorAll('.bag-item').forEach(r => {
       const subs = [];
       r.querySelectorAll('.sub-item').forEach(s => {
-        subs.push({
-          name: s.querySelector('.s-name').value,
-          qty: s.querySelector('.s-qty').value,
-          desc: s.querySelector('.s-desc').value
-        });
+        subs.push({ name: s.querySelector('.s-name').value, qty: s.querySelector('.s-qty').value, desc: s.querySelector('.s-desc').value });
       });
-      items.push({
-        num: r.querySelector('.i-num').value,
-        name: r.querySelector('.i-name').value,
-        desc: r.querySelector('.i-desc').value,
-        qty: r.querySelector('.i-qty').value,
-        weight: r.querySelector('.i-weight').value,
-        subs
-      });
+      items.push({ num: r.querySelector('.i-num').value, name: r.querySelector('.i-name').value, desc: r.querySelector('.i-desc').value, qty: r.querySelector('.i-qty').value, weight: r.querySelector('.i-weight').value, subs });
     });
     data.bags.push({ name: bag.querySelector('.bag-name').value, items });
   });
 
   $$('.slot').forEach(slot => {
     const img = slot.querySelector('img');
-    if (img && img.src && img.src.startsWith('data:')) {
-      data.slots[slot.dataset.slotId] = img.src;
-    }
+    if (img && img.src && img.src.startsWith('data:')) data.slots[slot.dataset.slotId] = img.src;
   });
 
   $$('#faithThresholds .faith-row').forEach(r => {
-    data.faith.push({
-      min: r.querySelector('.f-min').value,
-      dice: r.querySelector('.f-dice').value
-    });
+    data.faith.push({ min: r.querySelector('.f-min').value, dice: r.querySelector('.f-dice').value });
   });
 
   return data;
 }
 
-/* ============================================================
-   ЗАГРУЗКА
-   ============================================================ */
 function applyData(d) {
   if (!d) return;
-
-  if (d.fields) $$('[data-key]').forEach(el => {
-    if (d.fields[el.dataset.key] !== undefined) el.value = d.fields[el.dataset.key];
-  });
-  if (d.skills) $$('[data-skill]').forEach(el => {
-    if (d.skills[el.dataset.skill] !== undefined) el.value = d.skills[el.dataset.skill];
-  });
+  if (d.fields) $$('[data-key]').forEach(el => { if (d.fields[el.dataset.key] !== undefined) el.value = d.fields[el.dataset.key]; });
+  if (d.skills) $$('[data-skill]').forEach(el => { if (d.skills[el.dataset.skill] !== undefined) el.value = d.skills[el.dataset.skill]; });
 
   if (d.photo) {
-    const img = $('#photoImg');
-    img.src = d.photo;
-    img.style.display = 'block';
-    const ph = $('#photoBox .photo-ph');
-    if (ph) ph.style.display = 'none';
+    const img = $('#photoImg'); img.src = d.photo; img.style.display = 'block';
+    const ph = $('#photoBox .photo-ph'); if (ph) ph.style.display = 'none';
   }
+
+  $('#globalBonusesList').innerHTML = '';
+  (d.globalBonuses || []).forEach(text => $('#globalBonusesList').appendChild(createGlobalBonusRow(text)));
 
   $('#subclassList').innerHTML = '';
   (d.subclasses || []).forEach(sc => $('#subclassList').appendChild(createSubclass(sc)));
@@ -1180,11 +1027,8 @@ function applyData(d) {
     $(`#${id}`).innerHTML = '';
     (items || []).forEach(it => $(`#${id}`).appendChild(createListCard(kind, it)));
   };
-  fill('spellContainer', 'spell', d.spells);
-  fill('effectList', 'effect', d.effects);
-  fill('activeList', 'active', d.actives);
-  fill('passiveList', 'passive', d.passives);
-  fill('equipList', 'equip', d.equip);
+  fill('spellContainer', 'spell', d.spells); fill('effectList', 'effect', d.effects);
+  fill('activeList', 'active', d.actives); fill('passiveList', 'passive', d.passives); fill('equipList', 'equip', d.equip);
 
   $('#bagContainer').innerHTML = '';
   (d.bags || []).forEach(b => $('#bagContainer').appendChild(createBag(b, updateTotalWeight, false)));
@@ -1193,64 +1037,41 @@ function applyData(d) {
     Object.entries(d.slots).forEach(([slotId, src]) => {
       const slot = document.querySelector(`[data-slot-id="${slotId}"]`);
       if (slot) {
-        const img = slot.querySelector('img');
-        const ph = slot.querySelector('.ph');
-        const clear = slot.querySelector('.slot-clear');
-        const buttons = slot.querySelector('.slot-buttons');
-        img.src = src;
-        img.style.display = 'block';
+        const img = slot.querySelector('img'); const ph = slot.querySelector('.ph');
+        const clear = slot.querySelector('.slot-clear'); const buttons = slot.querySelector('.slot-buttons');
+        img.src = src; img.style.display = 'block';
         if (ph) ph.style.display = 'none';
-        clear.style.display = 'block';
-        if (buttons) buttons.style.display = 'flex';
+        clear.style.display = 'block'; if (buttons) buttons.style.display = 'flex';
       }
     });
   }
 
-  renderFaithThresholds(d.faith);
-  updateTotalWeight();
-  updateSharedTotalWeight();
-  recalcAll();
+  renderFaithThresholds(d.faith); updateTotalWeight(); updateSharedTotalWeight(); recalcAll();
 }
 
 /* ============================================================
-   СОХРАНЕНИЕ
+   СОХРАНЕНИЕ И ЭКСПОРТ/ИМПОРТ
    ============================================================ */
 let saveTimer = null;
 function autoSave() {
   if (isAppLoading) return; 
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
-    try {
-      const data = collectData();
-      await saveToDB(data);
-      console.log("Автосохранение в IndexedDB успешно.");
-    } catch (e) {
-      console.error("Ошибка автосохранения в IndexedDB:", e);
-      toast('⚠️ Ошибка сохранения');
-    }
+    try { await saveToDB(collectData()); } catch (e) { console.error(e); }
   }, 500);
 }
 
 async function saveNow() {
   if (isAppLoading) return;
-  try {
-    const data = collectData();
-    await saveToDB(data);
-    toast('💾 Сохранено');
-  } catch (e) {
-    console.error("Ошибка сохранения в IndexedDB:", e);
-    toast('⚠️ Ошибка сохранения');
-  }
+  try { await saveToDB(collectData()); toast('💾 Сохранено'); } catch (e) { toast('⚠️ Ошибка'); }
 }
 
 async function loadFromStorage() {
   try {
     const data = await loadFromDB();
-    if (data) { 
-      applyData(data); 
-    }
+    if (data) applyData(data); 
   } catch (e) {
-    console.warn("Данных в IndexedDB нет или произошла ошибка:", e);
+    console.warn("Данных нет:", e);
   } finally {
     setTimeout(() => { isAppLoading = false; }, 500);
   }
@@ -1261,12 +1082,8 @@ function exportJSON() {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const name = (data.fields.name || 'character').replace(/\s+/g, '_');
-  a.href = url;
-  a.download = `${name}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  toast('⬇ Экспортировано');
+  a.href = url; a.download = `${(data.fields.name || 'character').replace(/\s+/g, '_')}.json`; a.click();
+  URL.revokeObjectURL(url); toast('⬇ Экспортировано');
 }
 
 async function importJSON(file) {
@@ -1274,71 +1091,86 @@ async function importJSON(file) {
   reader.onload = async e => {
     try {
       isAppLoading = true;
-      const data = JSON.parse(e.target.result);
-      applyData(data);
+      applyData(JSON.parse(e.target.result));
       await saveToDB(collectData());
       toast('⬆ Импортировано');
       setTimeout(() => { isAppLoading = false; }, 500);
-    } catch (err) { 
-      isAppLoading = false;
-      toast('✖ Ошибка файла'); 
-    }
+    } catch (err) { isAppLoading = false; toast('✖ Ошибка файла'); }
   };
   reader.readAsText(file);
 }
 
 async function resetAll() {
-  if (!confirm('Удалить все данные персонажа? (Общий инвентарь не пострадает)')) return;
-  
-  try {
-    if (db) {
-      const transaction = db.transaction([STORE_NAME], 'readwrite');
-      const store = transaction.objectStore(STORE_NAME);
-      store.delete('character');
-    }
-  } catch(e) { console.warn(e); }
-
+  if (!confirm('Удалить все данные персонажа?')) return;
+  try { if (db) db.transaction([STORE_NAME], 'readwrite').objectStore(STORE_NAME).delete('character'); } catch(e) {}
   $$('[data-key], [data-skill]').forEach(el => el.value = '');
-  ['subclassList','spellContainer','effectList','activeList','passiveList','bagContainer','equipList','faithThresholds'].forEach(id => {
+  ['globalBonusesList', 'subclassList','spellContainer','effectList','activeList','passiveList','bagContainer','equipList','faithThresholds'].forEach(id => {
     const el = document.getElementById(id); if (el) el.innerHTML = '';
   });
-  const img = $('#photoImg');
-  img.src = '';
-  img.style.display = 'none';
-  const ph = $('#photoBox .photo-ph');
-  if (ph) ph.style.display = 'block';
-  renderSlots();
-  renderFaithThresholds();
-  updateTotalWeight();
-  recalcAll();
-  toast('✖ Сброшено');
+  const img = $('#photoImg'); img.src = ''; img.style.display = 'none';
+  const ph = $('#photoBox .photo-ph'); if (ph) ph.style.display = 'block';
+  renderSlots(); renderFaithThresholds(); updateTotalWeight(); recalcAll(); toast('✖ Сброшено');
 }
 
 /* ============================================================
-   ФОТО И КЛИКИ
+   INIT
    ============================================================ */
+async function init() {
+  await initDB();
+  renderSkills(); renderSlots(); renderFaithThresholds();
+  await loadFromStorage();
+  
+  if (typeof window.startFirebaseSync === 'function') window.startFirebaseSync();
+
+  document.addEventListener('input', () => { autoSave(); recalcAll(); });
+  document.addEventListener('change', () => { autoSave(); recalcAll(); });
+
+  setTimeout(() => {
+    $$('.btn-toggle').forEach(btn => {
+      const target = document.getElementById(btn.dataset.target);
+      if (target) { target.classList.add('collapsed'); btn.textContent = '▸ Показать'; }
+    });
+  }, 100);
+
+  $('#saveBtn').onclick   = saveNow;
+  $('#exportBtn').onclick = exportJSON;
+  $('#importBtn').onclick = () => $('#importFile').click();
+  $('#resetBtn').onclick  = resetAll;
+  $('#importFile').onchange = e => { if (e.target.files[0]) importJSON(e.target.files[0]); e.target.value = ''; };
+
+  $('#combatBtn').onclick = openCombat;
+  $('#closeCombatBtn').onclick = () => $('#combatModal').classList.remove('open');
+  $('#closeBreakdownBtn').onclick = () => $('#breakdownModal').classList.remove('open');
+
+  $('#addGlobalBonusBtn').onclick = () => { $('#globalBonusesList').appendChild(createGlobalBonusRow()); autoSave(); };
+  $('#addSubclassBtn').onclick = () => { $('#subclassList').appendChild(createSubclass()); autoSave(); };
+  $('#addSpellBtn').onclick    = () => { $('#spellContainer').appendChild(createListCard('spell')); autoSave(); };
+  $('#addEffectBtn').onclick   = () => { $('#effectList').appendChild(createListCard('effect')); autoSave(); };
+  $('#addActiveBtn').onclick   = () => { $('#activeList').appendChild(createListCard('active')); autoSave(); };
+  $('#addPassiveBtn').onclick  = () => { $('#passiveList').appendChild(createListCard('passive')); autoSave(); };
+  
+  $('#addBagBtn').onclick      = () => { $('#bagContainer').appendChild(createBag({}, updateTotalWeight, false)); autoSave(); };
+  $('#addSharedBagBtn').onclick = () => { 
+      const newBag = createBag({}, updateSharedTotalWeight, true); 
+      $('#sharedBagContainer').appendChild(newBag); saveSharedToCloud(); 
+  };
+
+  $('#addEquipBtn').onclick    = () => { $('#equipList').appendChild(createListCard('equip')); autoSave(); };
+  $('#addFaithBtn').onclick    = () => { $('#faithThresholds').appendChild(createFaithRow()); autoSave(); };
+
+  initPhoto(); initBreakdownClicks(); initToggles(); initTabs();
+  toast('☠ Лист персонажа загружен');
+}
+
 function initPhoto() {
-  const box = $('#photoBox');
-  const img = $('#photoImg');
-  const ph = box.querySelector('.photo-ph');
-
+  const box = $('#photoBox'); const img = $('#photoImg'); const ph = box.querySelector('.photo-ph');
   const fileInput = document.createElement('input');
-  fileInput.type = 'file';
-  fileInput.accept = 'image/*';
-  fileInput.style.display = 'none';
-  document.body.appendChild(fileInput);
-
+  fileInput.type = 'file'; fileInput.accept = 'image/*'; fileInput.style.display = 'none'; document.body.appendChild(fileInput);
   box.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', e => {
-    const f = e.target.files[0];
-    if (!f) return;
+    const f = e.target.files[0]; if (!f) return;
     const reader = new FileReader();
-    reader.onload = ev => {
-      img.src = ev.target.result;
-      img.style.display = 'block';
-      ph.style.display = 'none';
-      autoSave();
-    };
+    reader.onload = ev => { img.src = ev.target.result; img.style.display = 'block'; ph.style.display = 'none'; autoSave(); };
     reader.readAsDataURL(f);
   });
 }
@@ -1349,119 +1181,35 @@ function initBreakdownClicks() {
     if (totalEl) {
       const target = totalEl.dataset.totalBtn;
       const labels = { hp: 'Здоровье', defense: 'Защита', speed: 'Скорость' };
-      showBreakdown(target, labels[target] || target);
-      return;
+      showBreakdown(target, labels[target] || target); return;
     }
     const skillTotal = e.target.closest('[data-skill-total]');
-    if (skillTotal) {
-      const target = 'skill_' + skillTotal.dataset.skillTotal;
-      const label = skillTotal.dataset.skillName;
-      showBreakdown(target, label);
-    }
+    if (skillTotal) showBreakdown('skill_' + skillTotal.dataset.skillTotal, skillTotal.dataset.skillName);
   });
-
-  $('#closeBreakdownBtn').onclick = () => $('#breakdownModal').classList.remove('open');
 }
 
 function initToggles() {
   $$('.btn-toggle').forEach(btn => {
     btn.onclick = () => {
-      const target = document.getElementById(btn.dataset.target);
-      if (!target) return;
+      const target = document.getElementById(btn.dataset.target); if (!target) return;
       target.classList.toggle('collapsed');
       btn.textContent = target.classList.contains('collapsed') ? '▸ Показать' : '▾ Скрыть';
     };
   });
 }
 
-/* ============================================================
-   ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
-   ============================================================ */
 function initTabs() {
-  const sheetView = $('#sheetView');
-  const invView = $('#inventoryView');
-  const tabSheet = $('#tabSheetBtn');
-  const tabInv = $('#tabInvBtn');
-
+  const sheetView = $('#sheetView'); const invView = $('#inventoryView');
+  const tabSheet = $('#tabSheetBtn'); const tabInv = $('#tabInvBtn');
   if (!tabSheet || !tabInv) return;
-
   function switchTab(activeTab, activeView) {
     [tabSheet, tabInv].forEach(t => t.classList.remove('active'));
     [sheetView, invView].forEach(v => v.classList.add('hidden'));
-    activeTab.classList.add('active');
-    activeView.classList.remove('hidden');
+    activeTab.classList.add('active'); activeView.classList.remove('hidden');
   }
-
   tabSheet.onclick = () => switchTab(tabSheet, sheetView);
   tabInv.onclick = () => switchTab(tabInv, invView);
 }
 
-/* ============================================================
-   INIT
-   ============================================================ */
-async function init() {
-  await initDB();
-  renderSkills();
-  renderSlots();
-  renderFaithThresholds();
-  await loadFromStorage();
-  
-  if (typeof window.startFirebaseSync === 'function') {
-    window.startFirebaseSync();
-  }
-
-  document.addEventListener('input', () => { autoSave(); recalcAll(); });
-  document.addEventListener('change', () => { autoSave(); recalcAll(); });
-
-  // === СВОРАЧИВАЕМ ВСЕ БЛОКИ ПРИ ЗАГРУЗКЕ (с задержкой) ===
-  setTimeout(() => {
-    $$('.btn-toggle').forEach(btn => {
-      const target = document.getElementById(btn.dataset.target);
-      if (target) {
-        target.classList.add('collapsed');
-        btn.textContent = '▸ Показать';
-      }
-    });
-  }, 100);
-
-  $('#saveBtn').onclick   = saveNow;
-  $('#exportBtn').onclick = exportJSON;
-  $('#importBtn').onclick = () => $('#importFile').click();
-  $('#resetBtn').onclick  = resetAll;
-  $('#importFile').onchange = e => {
-    if (e.target.files[0]) importJSON(e.target.files[0]);
-    e.target.value = '';
-  };
-
-  $('#combatBtn').onclick = openCombat;
-  $('#closeCombatBtn').onclick = () => $('#combatModal').classList.remove('open');
-
-  $('#addSubclassBtn').onclick = () => { $('#subclassList').appendChild(createSubclass()); autoSave(); };
-  $('#addSpellBtn').onclick    = () => { $('#spellContainer').appendChild(createListCard('spell')); autoSave(); };
-  $('#addEffectBtn').onclick   = () => { $('#effectList').appendChild(createListCard('effect')); autoSave(); };
-  $('#addActiveBtn').onclick   = () => { $('#activeList').appendChild(createListCard('active')); autoSave(); };
-  $('#addPassiveBtn').onclick  = () => { $('#passiveList').appendChild(createListCard('passive')); autoSave(); };
-  
-  $('#addBagBtn').onclick      = () => { $('#bagContainer').appendChild(createBag({}, updateTotalWeight, false)); autoSave(); };
-  $('#addSharedBagBtn').onclick = () => { 
-      const newBag = createBag({}, updateSharedTotalWeight, true); 
-      $('#sharedBagContainer').appendChild(newBag); 
-      saveSharedToCloud(); 
-  };
-
-  $('#addEquipBtn').onclick    = () => { $('#equipList').appendChild(createListCard('equip')); autoSave(); };
-  $('#addFaithBtn').onclick    = () => { $('#faithThresholds').appendChild(createFaithRow()); autoSave(); };
-
-  initPhoto();
-  initBreakdownClicks();
-  initToggles(); 
-  initTabs();
-  
-  toast('☠ Лист персонажа загружен');
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
-} else {
-  init();
-}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+else init();
