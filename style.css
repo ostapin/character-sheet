@@ -574,7 +574,10 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .actions .btn { padding: 8px 4px; font-size: 12px; }
 
   .grid { padding: 0 6px; margin: 10px auto; gap: 8px; }
-  .card { padding: 4px; } 
+  
+  /* ИСПРАВЛЕНИЕ: Убираем лишние отступы у внешней карточки, чтобы она растянулась */
+  #inventoryView { padding: 10px 4px !important; }
+  #inventoryView .card { padding: 8px 4px; }
 
   .character-panel { grid-template-columns: 1fr !important; }
   .character-photo .photo-box { min-width: 150px; min-height: 150px; }
@@ -615,7 +618,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     align-items: center;
     gap: 6px;
     margin-bottom: 8px;
-    padding: 0 4px; /* Небольшой отступ для текста шапки */
+    padding: 0 4px; 
   }
   .bag-header input { width: 100%; flex: none; margin-bottom: 4px; }
   .bag-header .bag-info {
