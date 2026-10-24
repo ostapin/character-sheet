@@ -187,8 +187,8 @@ input[type="text"], input[type="number"], textarea, select {
   background: #0a0f0a; border: 1px solid var(--border); border-radius: 6px;
   padding: 8px 10px; color: var(--text); font-family: inherit;
   font-size: 14px; transition: all 0.2s ease; width: 100%; 
-  resize: none; /* Убрали стандартный уголок для растягивания */
-  overflow: hidden; /* Убрали полосы прокрутки */
+  resize: none; 
+  overflow: hidden; 
 }
 input:focus, textarea:focus, select:focus {
   outline: none; border-color: var(--green);
@@ -417,14 +417,21 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   position: relative;
 }
 
-/* Сетка на ПК (ИЗМЕНЕНО: номер увеличен на 50% -> 60px, убраны скроллы) */
+/* Сетка на ПК */
 .bag-item-main {
   display: grid; 
-  /* Номер 60px (было 40), остальное как было */
   grid-template-columns: 60px 1fr 3fr 60px 70px 36px 36px;
   gap: 8px; align-items: center;
 }
 .bag-item-main input { padding: 6px 8px; font-size: 13px; }
+
+/* ЖЕСТКОЕ ИСПРАВЛЕНИЕ ДЛЯ ПОЛЯ ОПИСАНИЯ НА ПК */
+.bag-item-main .i-desc {
+  width: 100% !important;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
 .bag-item-toggle {
   background: transparent; border: none; color: var(--green); font-size: 14px;
   cursor: pointer; padding: 2px 6px; font-weight: 700;
@@ -557,7 +564,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
 #inventoryView.hidden { display: none; }
 
 /* ============================================================
-   МОБИЛЬНАЯ ВЕРСИЯ (ТЕЛЕФОНЫ) - ФИНАЛЬНАЯ
+   МОБИЛЬНАЯ ВЕРСИЯ (ТЕЛЕФОНЫ) - ИСПРАВЛЕНА ШИРИНА
    ============================================================ */
 @media (max-width: 900px) {
   .topbar { padding: 10px 12px; flex-direction: column; align-items: stretch; gap: 10px; }
@@ -591,117 +598,10 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
 
   /* ИНВЕНТАРЬ (СУМКИ) */
   
-  /* Шапка сумки: Название сверху, под ним Ячейки, Вес и Крестик */
-  .bag-header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
+  /* ЖЕСТКОЕ УДАЛЕНИЕ ЛИШНИХ ОТСТУПОВ СУМКИ */
+  .bag { 
+    padding: 4px !important; 
     margin-bottom: 10px;
-    position: relative;
   }
-  .bag-header input { width: 100%; flex: none; margin-bottom: 4px; }
-  .bag-header .bag-info {
-    display: flex;
-    gap: 12px;
-    font-size: 13px;
-    flex: 1;
-  }
-  .bag-header .bag-info b { color: var(--green-bright); }
-  .bag-del { 
-    flex: none; 
-    padding: 4px 10px; 
-    font-size: 16px;
-    background: rgba(185, 28, 28, 0.1);
-  }
-
-  /* Уменьшаем отступы, чтобы выиграть место по ширине */
-  .bag {
-    padding: 6px; 
-  }
-  .bag-item {
-    padding: 4px; 
-  }
-
-  /* Карточка предмета - все поля одной высоты */
-  .bag-item-main { 
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px; 
-    align-items: center;
-  }
-  
-  .bag-item-main input,
-  .bag-item-main textarea {
-    height: 36px;
-    padding: 4px 6px;
-    font-size: 13px;
-    border-radius: 6px;
-  }
-
-  /* 1 строка: Номер + Название */
-  .bag-item-main .i-num { 
-    width: 65px; /* УВЕЛИЧЕНО на 50% (было 45) */
-    flex: none;
-    text-align: center;
-  }
-  .bag-item-main .i-name { 
-    flex: 1;
-    min-width: 100px;
-  }
-  
-  /* 2 строка: Описание (растягивается вниз на 100% ширины) */
-  .bag-item-main .i-desc { 
-    width: 100%;
-    height: auto;
-    min-height: 36px;
-    resize: none;
-    overflow-y: hidden;
-    line-height: 1.3; 
-    padding: 6px; 
-    word-break: break-word;
-    margin: 0;
-  }
-  
-  /* 3 строка: Кол-во + Вес + Стрелочка + Крестик */
-  .bag-item-main .i-qty { 
-    width: 50px; 
-    flex: none;
-  }
-  .bag-item-main .i-weight { 
-    width: 60px; 
-    flex: none;
-  }
-  
-  .bag-item-main .bag-item-toggle {
-    background: transparent;
-    border: none;
-    color: var(--green);
-    font-size: 16px;
-    padding: 4px;
-    width: auto;
-    margin-left: auto; 
-  }
-  
-  .bag-item-main .item-del { 
-    background: transparent;
-    color: #ef4444;
-    font-size: 18px;
-    padding: 4px 8px;
-    border: none;
-    width: auto;
-  }
-
-  /* Подпункты */
-  .sub-items { margin-left: 0; padding: 6px; width: 100%; }
-  .sub-item { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
-  .sub-item .s-name { flex: 1; }
-  .sub-item .s-qty { width: 60px; flex: none; }
-  .sub-item .s-desc { width: 100%; }
-  .sub-item .sub-item-del { margin-left: auto; background: transparent; border: none; color: #ef4444; }
-
-  .faith-row { grid-template-columns: 1fr 1fr 30px; }
-
-  .combat-grid { grid-template-columns: 1fr; }
-  .combat-list { max-height: 300px; }
-}
+  .bag-items { 
+    padding: 0 !important; 
