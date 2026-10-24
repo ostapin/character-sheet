@@ -1,5 +1,5 @@
 /* ============================================================
-   ЛИСТ ПЕРСОНАЖА — вся логика v5.8 (IndexedDB)
+   ЛИСТ ПЕРСОНАЖА — вся логика v5.9 (Сворачивание блоков)
    ============================================================ */
 
 const DB_NAME = 'AbsoluteWorldCharacterDB';
@@ -440,7 +440,6 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
     if (isCloud) saveSharedToCloud();
   };
 
-  // ФУНКЦИЯ ПЕРЕСЧЕТА НОМЕРОВ
   function renumberItems() {
     const rows = itemsBox.querySelectorAll('.bag-item');
     rows.forEach((row, index) => {
@@ -1218,7 +1217,7 @@ function applyData(d) {
    ============================================================ */
 let saveTimer = null;
 function autoSave() {
-  if (isAppLoading) return; // Защита от перезаписи при загрузке
+  if (isAppLoading) return; 
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
     try {
@@ -1253,7 +1252,6 @@ async function loadFromStorage() {
   } catch (e) {
     console.warn("Данных в IndexedDB нет или произошла ошибка:", e);
   } finally {
-    // Снимаем блокировку после загрузки
     setTimeout(() => { isAppLoading = false; }, 500);
   }
 }
@@ -1275,13 +1273,12 @@ async function importJSON(file) {
   const reader = new FileReader();
   reader.onload = async e => {
     try {
-      isAppLoading = true; // Блокируем сохранение на время импорта
+      isAppLoading = true;
       const data = JSON.parse(e.target.result);
       applyData(data);
-      // Принудительно сохраняем в БД
       await saveToDB(collectData());
       toast('⬆ Импортировано');
-      setTimeout(() => { isAppLoading = false; }, 500); // Разблокируем через полсекунды
+      setTimeout(() => { isAppLoading = false; }, 500);
     } catch (err) { 
       isAppLoading = false;
       toast('✖ Ошибка файла'); 
@@ -1403,24 +1400,29 @@ function initTabs() {
    INIT
    ============================================================ */
 async function init() {
-  // 1. Инициализируем базу данных
   await initDB();
-  
-  // 2. Рисуем интерфейс
   renderSkills();
   renderSlots();
   renderFaithThresholds();
-  
-  // 3. Загружаем сохранения (асинхронно)
   await loadFromStorage();
   
-  // 4. Подключаем Firebase
   if (typeof window.startFirebaseSync === 'function') {
     window.startFirebaseSync();
   }
 
   document.addEventListener('input', () => { autoSave(); recalcAll(); });
   document.addEventListener('change', () => { autoSave(); recalcAll(); });
+
+  // === СВОРАЧИВАЕМ ВСЕ БЛОКИ ПРИ ЗАГРУЗКЕ (с задержкой) ===
+  setTimeout(() => {
+    $$('.btn-toggle').forEach(btn => {
+      const target = document.getElementById(btn.dataset.target);
+      if (target) {
+        target.classList.add('collapsed');
+        btn.textContent = '▸ Показать';
+      }
+    });
+  }, 100);
 
   $('#saveBtn').onclick   = saveNow;
   $('#exportBtn').onclick = exportJSON;
@@ -1452,7 +1454,7 @@ async function init() {
 
   initPhoto();
   initBreakdownClicks();
-  initToggles();
+  initToggles(); 
   initTabs();
   
   toast('☠ Лист персонажа загружен');
