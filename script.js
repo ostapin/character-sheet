@@ -1206,4 +1206,23 @@ function initToggles() {
     btn.onclick = () => {
       const target = document.getElementById(btn.dataset.target); if (!target) return;
       target.classList.toggle('collapsed');
-      btn.textContent
+      btn.textContent = target.classList.contains('collapsed') ? '▸ Показать' : '▾ Скрыть';
+    };
+  });
+}
+
+function initTabs() {
+  const sheetView = $('#sheetView'); const invView = $('#inventoryView');
+  const tabSheet = $('#tabSheetBtn'); const tabInv = $('#tabInvBtn');
+  if (!tabSheet || !tabInv) return;
+  function switchTab(activeTab, activeView) {
+    [tabSheet, tabInv].forEach(t => t.classList.remove('active'));
+    [sheetView, invView].forEach(v => v.classList.add('hidden'));
+    activeTab.classList.add('active'); activeView.classList.remove('hidden');
+  }
+  tabSheet.onclick = () => switchTab(tabSheet, sheetView);
+  tabInv.onclick = () => switchTab(tabInv, invView);
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+else init();
