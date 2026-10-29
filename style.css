@@ -402,6 +402,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   background: var(--panel-2); border: 1px solid var(--border);
   border-left: 3px solid var(--green); border-radius: 10px;
   padding: 14px; margin-bottom: 14px;
+  width: 100%;
 }
 .bag-header {
   display: flex; justify-content: space-between; align-items: center;
@@ -410,18 +411,20 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
 .bag-header input { flex: 1; min-width: 150px; font-weight: 700; color: var(--green-bright); }
 .bag-info { color: var(--muted); font-size: 12px; white-space: nowrap; }
 .bag-info b { color: var(--green-bright); }
-.bag-items { display: flex; flex-direction: column; gap: 8px; }
+.bag-items { display: flex; flex-direction: column; gap: 8px; width: 100%; }
 
 .bag-item {
   background: #0a0d0a; border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px;
   position: relative;
+  width: 100%;
 }
 
-/* Сетка на ПК */
+/* Сетка на ПК (ИСПРАВЛЕНО: описание шире, отступы убраны) */
 .bag-item-main {
   display: grid; 
-  grid-template-columns: 60px 1fr 3fr 60px 70px 36px 36px;
+  grid-template-columns: 50px 1fr 4fr 60px 70px 36px 36px;
   gap: 8px; align-items: center;
+  width: 100%;
 }
 .bag-item-main input { padding: 6px 8px; font-size: 13px; }
 
@@ -440,9 +443,10 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
 .bag-item .item-del { background: transparent; border: none; color: #7f1d1d; cursor: pointer; font-size: 16px; }
 .bag-item .item-del:hover { color: #ef4444; }
 .sub-items {
-  margin-top: 8px; margin-left: 46px; padding: 8px 10px;
+  margin-top: 8px; margin-left: 0; padding: 8px 10px;
   background: #0d120d; border-left: 2px dashed var(--green-dark);
   border-radius: 6px; display: flex; flex-direction: column; gap: 6px;
+  width: 100%;
 }
 .sub-item { display: grid; grid-template-columns: 1fr 70px 1.5fr 30px; gap: 6px; align-items: center; }
 .sub-item input { padding: 5px 7px; font-size: 12px; }
@@ -573,15 +577,15 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
   .actions .btn { padding: 8px 4px; font-size: 12px; }
 
-  /* Делаем сетку в одну колонку, но НЕ ломаем скрытие */
+  /* Принудительно делаем одну колонку для всего */
   .grid { 
-    grid-template-columns: 1fr; 
+    display: flex !important;
+    flex-direction: column;
     padding: 0 6px; 
     margin: 10px auto; 
     gap: 8px; 
   }
-  .card { padding: 4px; } 
-
+  
   /* ЖЕСТКО ЗАСТАВЛЯЕМ СКРЫТЫЕ ЭЛЕМЕНТЫ ИСЧЕЗНУТЬ */
   .grid.hidden { 
     display: none !important; 
@@ -589,6 +593,8 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   #inventoryView.hidden {
     display: none !important;
   }
+
+  .card { padding: 6px; } 
 
   .card-half { 
     display: block !important; 
@@ -648,9 +654,16 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     padding: 4px 0;
   }
 
-  /* ИНВЕНТАРЬ (СУМКИ) */
-  .bag { padding: 8px 0; margin-bottom: 8px; }
-  .bag-item { padding: 4px 0; }
+  /* ИНВЕНТАРЬ (СУМКИ) - УБИРАЕМ ПУСТОТЫ */
+  .bag { 
+    padding: 8px 0; 
+    margin-bottom: 8px;
+    width: 100%;
+  }
+  .bag-item {
+    padding: 4px 0;
+    width: 100%;
+  }
 
   .bag-header {
     display: flex;
@@ -674,7 +687,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     background: rgba(185, 28, 28, 0.1);
   }
 
-  .bag-item-main { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .bag-item-main { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; width: 100%; }
   
   .bag-item-main input,
   .bag-item-main textarea {
@@ -688,7 +701,7 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .bag-item-main .i-name { flex: 1; min-width: 100px; }
   
   .bag-item-main .i-desc { 
-    width: 100%;
+    width: 100% !important;
     height: auto;
     min-height: 36px;
     resize: none;
