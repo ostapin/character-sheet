@@ -573,21 +573,23 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
   .actions .btn { padding: 8px 4px; font-size: 12px; }
 
-    /* Принудительно делаем одну колонку для всего */
+  /* Делаем сетку в одну колонку, но НЕ ломаем скрытие */
   .grid { 
-    display: flex !important;
-    flex-direction: column;
+    grid-template-columns: 1fr; 
     padding: 0 6px; 
     margin: 10px auto; 
     gap: 8px; 
   }
-  
-  /* Заставляем скрытые элементы исчезать, даже если у них display: flex */
-  .grid.hidden {
+  .card { padding: 4px; } 
+
+  /* ЖЕСТКО ЗАСТАВЛЯЕМ СКРЫТЫЕ ЭЛЕМЕНТЫ ИСЧЕЗНУТЬ */
+  .grid.hidden { 
+    display: none !important; 
+  }
+  #inventoryView.hidden {
     display: none !important;
   }
-  
-  /* Карточки Общих характеристик и Подклассов занимают всю ширину */
+
   .card-half { 
     display: block !important; 
     width: 100%;
@@ -596,8 +598,6 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     width: 100%;
     margin-bottom: 8px;
   }
-
-  .card { padding: 6px; } 
 
   .character-panel { grid-template-columns: 1fr !important; }
   .character-photo .photo-box { min-width: 150px; min-height: 150px; }
