@@ -573,13 +573,18 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
   .actions .btn { padding: 8px 4px; font-size: 12px; }
 
-  /* Принудительно делаем одну колонку для всего */
+    /* Принудительно делаем одну колонку для всего */
   .grid { 
     display: flex !important;
     flex-direction: column;
     padding: 0 6px; 
     margin: 10px auto; 
     gap: 8px; 
+  }
+  
+  /* Заставляем скрытые элементы исчезать, даже если у них display: flex */
+  .grid.hidden {
+    display: none !important;
   }
   
   /* Карточки Общих характеристик и Подклассов занимают всю ширину */
