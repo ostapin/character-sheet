@@ -1,5 +1,5 @@
 /* ============================================================
-   ЛИСТ ПЕРСОНАЖА — вся логика v6.0 (С заметками)
+   ЛИСТ ПЕРСОНАЖА — вся логика v6.1 (С авто-ростом высоты)
    ============================================================ */
 
 const DB_NAME = 'AbsoluteWorldCharacterDB';
@@ -467,6 +467,7 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
     `;
 
     const descInput = row.querySelector('.i-desc');
+    
     const autoResize = () => {
       descInput.style.height = '1px';
       requestAnimationFrame(() => {
@@ -479,6 +480,18 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
     setTimeout(autoResize, 50);
     setTimeout(autoResize, 250);
     setTimeout(autoResize, 800);
+
+    // === ИЗМЕНЕНИЕ: Принудительный пересчет для всех полей ===
+    setTimeout(() => {
+        document.querySelectorAll('.i-desc').forEach(el => {
+            if (el.scrollHeight > 36) {
+                el.style.height = '1px';
+                requestAnimationFrame(() => {
+                    el.style.height = (el.scrollHeight + 2) + 'px';
+                });
+            }
+        });
+    }, 1000);
 
     const toggle = row.querySelector('.bag-item-toggle');
     const subBox = row.querySelector('.sub-items');
@@ -1193,23 +1206,4 @@ function initToggles() {
     btn.onclick = () => {
       const target = document.getElementById(btn.dataset.target); if (!target) return;
       target.classList.toggle('collapsed');
-      btn.textContent = target.classList.contains('collapsed') ? '▸ Показать' : '▾ Скрыть';
-    };
-  });
-}
-
-function initTabs() {
-  const sheetView = $('#sheetView'); const invView = $('#inventoryView');
-  const tabSheet = $('#tabSheetBtn'); const tabInv = $('#tabInvBtn');
-  if (!tabSheet || !tabInv) return;
-  function switchTab(activeTab, activeView) {
-    [tabSheet, tabInv].forEach(t => t.classList.remove('active'));
-    [sheetView, invView].forEach(v => v.classList.add('hidden'));
-    activeTab.classList.add('active'); activeView.classList.remove('hidden');
-  }
-  tabSheet.onclick = () => switchTab(tabSheet, sheetView);
-  tabInv.onclick = () => switchTab(tabInv, invView);
-}
-
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-else init();
+      btn.textContent
