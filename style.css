@@ -577,7 +577,6 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
   .actions .btn { padding: 8px 4px; font-size: 12px; }
 
-  /* Принудительно делаем одну колонку для всего */
   .grid { 
     display: flex !important;
     flex-direction: column;
@@ -586,12 +585,18 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     gap: 8px; 
   }
   
-  /* ЖЕСТКО ЗАСТАВЛЯЕМ СКРЫТЫЕ ЭЛЕМЕНТЫ ИСЧЕЗНУТЬ */
   .grid.hidden { 
     display: none !important; 
   }
   #inventoryView.hidden {
     display: none !important;
+  }
+
+  #inventoryView {
+    padding: 10px 4px !important;
+    height: auto !important;
+    max-width: 100% !important;
+    width: 100% !important;
   }
 
   .card { padding: 6px; } 
@@ -622,7 +627,6 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
   .list-card .card-img-box { min-height: 180px; }
   .list-card .list-del { justify-self: end; }
 
-  /* === ИСПРАВЛЕНИЕ ПОДКЛАССОВ === */
   .subclass-head {
     display: flex;
     flex-wrap: nowrap;
@@ -635,7 +639,6 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     width: 100%;
   }
 
-  /* === ИСПРАВЛЕНИЕ БОНУСОВ === */
   .bonus-row { 
     display: flex;
     flex-wrap: wrap;
@@ -654,11 +657,11 @@ input::placeholder, textarea::placeholder { color: #3f4f3f; }
     padding: 4px 0;
   }
 
-  /* ИНВЕНТАРЬ (СУМКИ) - УБИРАЕМ ПУСТОТЫ */
   .bag { 
     padding: 8px 0; 
     margin-bottom: 8px;
     width: 100%;
+    border-left: none;
   }
   .bag-item {
     padding: 4px 0;
