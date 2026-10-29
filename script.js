@@ -1,5 +1,5 @@
 /* ============================================================
-   ЛИСТ ПЕРСОНАЖА — вся логика v6.2 (С финальным авто-ростом)
+   ЛИСТ ПЕРСОНАЖА — вся логика v6.3 (Финальный авто-рост)
    ============================================================ */
 
 const DB_NAME = 'AbsoluteWorldCharacterDB';
@@ -468,12 +468,10 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
 
     const descInput = row.querySelector('.i-desc');
     
+    // РАБОЧАЯ КОМАНДА (как в консоли)
     const autoResize = () => {
-      descInput.style.height = '1px';
-      requestAnimationFrame(() => {
-        descInput.style.height = (descInput.scrollHeight + 2) + 'px';
-        if (descInput.scrollHeight <= 36) descInput.style.height = '36px';
-      });
+      descInput.style.height = 'auto';
+      descInput.style.height = descInput.scrollHeight + 'px';
     };
 
     descInput.addEventListener('input', autoResize);
@@ -1133,13 +1131,11 @@ async function init() {
     });
   }, 100);
 
-  // Первичный пересчет высоты для всех полей
+  // Пересчет высоты при загрузке
   setTimeout(() => {
       document.querySelectorAll('.i-desc').forEach(el => {
-          el.style.height = '1px';
-          requestAnimationFrame(() => {
-              el.style.height = (el.scrollHeight + 2) + 'px';
-          });
+          el.style.height = 'auto';
+          el.style.height = el.scrollHeight + 'px';
       });
   }, 1000);
 
@@ -1219,13 +1215,12 @@ function initTabs() {
     [sheetView, invView].forEach(v => v.classList.add('hidden'));
     activeTab.classList.add('active'); activeView.classList.remove('hidden');
 
+    // Пересчет высоты при переключении на инвентарь
     if (activeView === invView) {
         setTimeout(() => {
             document.querySelectorAll('.i-desc').forEach(el => {
-                el.style.height = '1px';
-                requestAnimationFrame(() => {
-                    el.style.height = (el.scrollHeight + 2) + 'px';
-                });
+                el.style.height = 'auto';
+                el.style.height = el.scrollHeight + 'px';
             });
         }, 100);
     }
