@@ -1,5 +1,5 @@
 /* ============================================================
-   ЛИСТ ПЕРСОНАЖА — вся логика v6.1 (С авто-ростом высоты)
+   ЛИСТ ПЕРСОНАЖА — вся логика v6.2 (С финальным авто-ростом)
    ============================================================ */
 
 const DB_NAME = 'AbsoluteWorldCharacterDB';
@@ -480,18 +480,6 @@ function createBag(data = {}, onUpdate = () => {}, isCloud = false) {
     setTimeout(autoResize, 50);
     setTimeout(autoResize, 250);
     setTimeout(autoResize, 800);
-
-    // === ИЗМЕНЕНИЕ: Принудительный пересчет для всех полей ===
-    setTimeout(() => {
-        document.querySelectorAll('.i-desc').forEach(el => {
-            if (el.scrollHeight > 36) {
-                el.style.height = '1px';
-                requestAnimationFrame(() => {
-                    el.style.height = (el.scrollHeight + 2) + 'px';
-                });
-            }
-        });
-    }, 1000);
 
     const toggle = row.querySelector('.bag-item-toggle');
     const subBox = row.querySelector('.sub-items');
@@ -1145,6 +1133,16 @@ async function init() {
     });
   }, 100);
 
+  // Первичный пересчет высоты для всех полей
+  setTimeout(() => {
+      document.querySelectorAll('.i-desc').forEach(el => {
+          el.style.height = '1px';
+          requestAnimationFrame(() => {
+              el.style.height = (el.scrollHeight + 2) + 'px';
+          });
+      });
+  }, 1000);
+
   $('#saveBtn').onclick   = saveNow;
   $('#exportBtn').onclick = exportJSON;
   $('#importBtn').onclick = () => $('#importFile').click();
@@ -1215,10 +1213,22 @@ function initTabs() {
   const sheetView = $('#sheetView'); const invView = $('#inventoryView');
   const tabSheet = $('#tabSheetBtn'); const tabInv = $('#tabInvBtn');
   if (!tabSheet || !tabInv) return;
+
   function switchTab(activeTab, activeView) {
     [tabSheet, tabInv].forEach(t => t.classList.remove('active'));
     [sheetView, invView].forEach(v => v.classList.add('hidden'));
     activeTab.classList.add('active'); activeView.classList.remove('hidden');
+
+    if (activeView === invView) {
+        setTimeout(() => {
+            document.querySelectorAll('.i-desc').forEach(el => {
+                el.style.height = '1px';
+                requestAnimationFrame(() => {
+                    el.style.height = (el.scrollHeight + 2) + 'px';
+                });
+            });
+        }, 100);
+    }
   }
   tabSheet.onclick = () => switchTab(tabSheet, sheetView);
   tabInv.onclick = () => switchTab(tabInv, invView);
